@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.env
+*.db
+node_modules/
+.next/
+# never commit real bank slips
+slips/
+uploads/
