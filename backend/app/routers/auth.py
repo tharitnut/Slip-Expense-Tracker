@@ -12,7 +12,7 @@ from app.security import create_access_token, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-DEFAULT_CATEGORIES = ["อาหาร", "เดินทาง", "ช้อปปิ้ง", "บิล/สาธารณูปโภค", "สุขภาพ", "บันเทิง", "อื่นๆ"]
+DEFAULT_CATEGORIES = ["Food", "Transportation", "Shopping", "Bills & Utilities", "Health", "Entertainment", "Other"]
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)

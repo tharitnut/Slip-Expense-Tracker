@@ -9,7 +9,7 @@ from app.schemas import CategoryTotal, DailyTotal, MonthlySummary
 
 router = APIRouter(prefix="/summary", tags=["summary"])
 
-UNCATEGORIZED = "ไม่ระบุหมวด"
+UNCATEGORIZED = "Uncategorized"
 
 
 def _month_bounds(month: str) -> tuple[datetime, datetime]:

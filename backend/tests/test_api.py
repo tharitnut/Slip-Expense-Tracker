@@ -24,7 +24,7 @@ def test_register_login_me(client):
 
 def test_register_seeds_default_categories(client, auth):
     names = [c["name"] for c in client.get("/categories", headers=auth).json()]
-    assert "อาหาร" in names and len(names) >= 5
+    assert "Food" in names and len(names) >= 5
 
 
 def test_duplicate_email_is_rejected_case_insensitively(client):
@@ -142,7 +142,7 @@ def test_user_cannot_access_other_users_data(client):
 
 # ---------- list / filters ----------
 def test_list_filters_search_and_paging(client, auth):
-    food = category_id(client, auth, "อาหาร")
+    food = category_id(client, auth, "Food")
     client.post("/transactions", json=make_tx(merchant="KFC", occurred_at="2026-10-01T10:00:00", category_id=food), headers=auth)
     client.post("/transactions", json=make_tx(merchant="BTS", occurred_at="2026-10-10T10:00:00", note="trip"), headers=auth)
     client.post("/transactions", json=make_tx(merchant="Lotus", occurred_at="2026-09-20T10:00:00"), headers=auth)
@@ -163,14 +163,14 @@ def test_list_filters_search_and_paging(client, auth):
 
 # ---------- learned merchant categories ----------
 def test_merchant_category_is_learned_from_creation(client, auth):
-    food = category_id(client, auth, "อาหาร")
+    food = category_id(client, auth, "Food")
     client.post("/transactions", json=make_tx(merchant="Cafe Amazon", category_id=food), headers=auth)
     r = client.post("/transactions", json=make_tx(merchant="  cafe   AMAZON ", amount=60), headers=auth)
     assert r.json()["category_id"] == food
 
 
 def test_merchant_category_is_learned_from_edit(client, auth):
-    travel = category_id(client, auth, "เดินทาง")
+    travel = category_id(client, auth, "Transportation")
     tx = client.post("/transactions", json=make_tx(merchant="Grab"), headers=auth).json()
     assert tx["category_id"] is None
 
@@ -180,7 +180,7 @@ def test_merchant_category_is_learned_from_edit(client, auth):
 
 
 def test_explicit_category_beats_learned_rule(client, auth):
-    food, shop = category_id(client, auth, "อาหาร"), category_id(client, auth, "ช้อปปิ้ง")
+    food, shop = category_id(client, auth, "Food"), category_id(client, auth, "Shopping")
     client.post("/transactions", json=make_tx(merchant="Lotus", category_id=food), headers=auth)
     r = client.post("/transactions", json=make_tx(merchant="Lotus", category_id=shop, amount=5), headers=auth)
     assert r.json()["category_id"] == shop
@@ -188,10 +188,10 @@ def test_explicit_category_beats_learned_rule(client, auth):
 
 # ---------- categories ----------
 def test_category_crud_and_delete_clears_transactions(client, auth):
-    r = client.post("/categories", json={"name": "สัตว์เลี้ยง"}, headers=auth)
+    r = client.post("/categories", json={"name": "Pets"}, headers=auth)
     assert r.status_code == 201
     cid = r.json()["id"]
-    assert client.post("/categories", json={"name": "สัตว์เลี้ยง"}, headers=auth).status_code == 409
+    assert client.post("/categories", json={"name": "Pets"}, headers=auth).status_code == 409
 
     tx = client.post("/transactions", json=make_tx(merchant="Pet Shop", category_id=cid), headers=auth).json()
     assert client.delete(f"/categories/{cid}", headers=auth).status_code == 204
@@ -204,7 +204,7 @@ def test_category_crud_and_delete_clears_transactions(client, auth):
 
 # ---------- summary ----------
 def test_monthly_summary(client, auth):
-    food, travel = category_id(client, auth, "อาหาร"), category_id(client, auth, "เดินทาง")
+    food, travel = category_id(client, auth, "Food"), category_id(client, auth, "Transportation")
     # Fixed past months so the test never depends on today's date (future dates are rejected)
     for body in (
         make_tx(amount=300, merchant="A", occurred_at="2025-10-01T09:00:00", category_id=food),
@@ -218,7 +218,7 @@ def test_monthly_summary(client, auth):
     assert s["total"] == 500 and s["transaction_count"] == 3
     assert s["previous_month_total"] == 250
     assert s["change_percent"] == 100.0
-    assert [c["category_name"] for c in s["by_category"]] == ["อาหาร", "เดินทาง", "ไม่ระบุหมวด"]
+    assert [c["category_name"] for c in s["by_category"]] == ["Food", "Transportation", "Uncategorized"]
     assert s["by_category"][0]["percent"] == 60.0
     assert s["daily"] == [{"date": "2025-10-01", "total": 420.0}, {"date": "2025-10-15", "total": 80.0}]
 

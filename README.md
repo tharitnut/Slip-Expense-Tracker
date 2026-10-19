@@ -1,76 +1,81 @@
 # Slip Expense Tracker
 
-เว็บแอปติดตามค่าใช้จ่ายส่วนตัว บันทึกธุรกรรมจากสลิปโอนเงิน (OCR) จัดหมวดหมู่อัตโนมัติ และสรุปรายเดือน
+A personal expense tracking web application. Record spending manually or automatically by uploading Thai bank transfer slips (via OCR), with automatic merchant-based categorization and monthly dashboard summaries.
 
-> สถานะ: **Backend API เสร็จแล้ว (26 tests ผ่าน)** · Frontend และ OCR อยู่ในขั้นตอนถัดไป (ดู Roadmap)
+> Status: **Backend API Complete (26 tests passing)** · Frontend and OCR planned next (see Roadmap).
 
-## ทำอะไรได้บ้าง (Backend)
+## Features (Backend)
 
-- สมัคร / ล็อกอิน (JWT, รหัสผ่านเก็บแบบ bcrypt) ข้อมูลแต่ละคนแยกกัน ผู้ใช้เห็นเฉพาะของตัวเอง
-- CRUD ธุรกรรม + ค้นหา, กรองตามช่วงวันที่/หมวด, แบ่งหน้า
-- **กันสลิปซ้ำ**: ใช้เลขอ้างอิงบนสลิป (unique ต่อผู้ใช้ ป้องกันแม้ส่งพร้อมกัน) และถ้าอ่านเลขอ้างอิงไม่ได้ จะเทียบ ยอด + เวลา + ผู้รับ
-- **จัดหมวดอัตโนมัติแบบเรียนรู้**: ถ้าผู้ใช้เลือกหมวดให้ร้านหนึ่ง ครั้งต่อไปร้านเดิมจะถูกจัดหมวดให้เอง (เช่น `Cafe Amazon` → อาหาร)
-- สรุปรายเดือน: ยอดรวม, เทียบเดือนก่อน (%), สัดส่วนตามหมวด, ยอดรายวัน (พร้อมใช้ทำกราฟ)
-- Validation: ยอดต้อง > 0 ทศนิยมไม่เกิน 2 ตำแหน่ง, วันที่ห้ามอยู่ในอนาคต
+- **Authentication**: Register / Login (JWT, bcrypt password hashing), user data isolation (users only see their own records).
+- **Transactions CRUD**: Search, filter by date range/category, and pagination.
+- **Duplicate Slip Prevention**: Uses bank reference number (`slip_ref`, unique per user). If the reference number is missing, falls back to matching amount + timestamp + merchant.
+- **Learned Auto-Categorization**: When a user assigns a category to a merchant once, subsequent transactions from that same merchant are auto-categorized (e.g., `Cafe Amazon` → Food & Dining).
+- **Monthly Summary**: Total spending, month-over-month change (%), breakdown by category, and daily totals (ready for charts).
+- **Validation**: Amount must be > 0 with at most 2 decimal places; transaction dates cannot be in the future.
 
-## Tech stack
+## Tech Stack
 
-FastAPI · SQLAlchemy 2 · PostgreSQL (SQLite สำหรับ dev/test) · pydantic v2 · PyJWT · pytest
+FastAPI · SQLAlchemy 2 · PostgreSQL (SQLite for dev/testing) · Pydantic v2 · PyJWT · pytest
 
-## รันด้วย Docker
+## Running with Docker
 
 ```bash
 docker compose up --build
 ```
 
 - API: http://localhost:8000
-- เอกสาร API แบบลองยิงได้: http://localhost:8000/docs
+- Interactive API Docs (Swagger UI): http://localhost:8000/docs
 
-## รันบนเครื่อง (ไม่ใช้ Docker)
+## Running Locally (without Docker)
 
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv .venv
+# Linux/macOS:
+source .venv/bin/activate
+# Windows:
+.\.venv\Scripts\Activate.ps1
+
 pip install -r requirements-dev.txt
-cp .env.example .env                                  # ใช้ SQLite ไฟล์ dev.db
+copy .env.example .env     # On Linux/macOS use: cp .env.example .env
 uvicorn app.main:app --reload
 ```
 
-## รัน test
+## Running Tests
 
 ```bash
 cd backend
 pytest
 ```
 
-Test ใช้ SQLite ในหน่วยความจำ ไม่ต้องมี Postgres ครอบคลุม: auth, validation, กันสลิปซ้ำ, การแยกข้อมูลระหว่างผู้ใช้, filter/แบ่งหน้า, การเรียนรู้หมวด, สรุปรายเดือน (รวมรอยต่อข้ามปี)
+Tests run against an in-memory SQLite database (PostgreSQL not required for testing). Covers: authentication, validation, duplicate slip prevention, multi-tenant data isolation, filtering/pagination, category learning, and monthly summaries (including year boundary transitions).
 
-## API ย่อ
+## API Overview
 
-| Method | Path | หมายเหตุ |
+| Method | Path | Description |
 |---|---|---|
-| POST | `/auth/register` | `{email, password}` สร้างหมวดเริ่มต้นให้ด้วย |
-| POST | `/auth/login` | form-data `username`, `password` → `access_token` |
-| GET | `/auth/me` | |
-| GET/POST | `/categories` | |
-| DELETE | `/categories/{id}` | ธุรกรรมในหมวดนั้นกลายเป็น "ไม่ระบุหมวด" |
-| GET/POST | `/transactions` | filter: `start`, `end`, `category_id`, `q`, `limit`, `offset` |
-| GET/PATCH/DELETE | `/transactions/{id}` | |
-| GET | `/summary/monthly?month=YYYY-MM` | |
+| POST | `/auth/register` | `{email, password}` - Creates account and seeds default categories |
+| POST | `/auth/login` | Form-data `username`, `password` → `{access_token, token_type}` |
+| GET | `/auth/me` | Current user profile |
+| GET / POST | `/categories` | List or create categories |
+| DELETE | `/categories/{id}` | Deletes category; associated transactions become "Uncategorized" |
+| GET / POST | `/transactions` | Filters: `start`, `end`, `category_id`, `q`, `limit`, `offset` |
+| GET / PATCH / DELETE | `/transactions/{id}` | Get, update, or delete transaction |
+| GET | `/summary/monthly?month=YYYY-MM` | Monthly spending breakdown & daily chart data |
 
-ใส่ header `Authorization: Bearer <token>` ทุก endpoint ยกเว้น register/login/health
+Include header `Authorization: Bearer <token>` on all endpoints except register, login, and health.
 
-## การตัดสินใจด้านการออกแบบ
+## Design Decisions
 
-- **เก็บยอดเงินเป็น `Numeric(12,2)`** ในฐานข้อมูล (ไม่ใช้ float) แล้วค่อยแปลงเป็นตัวเลขตอนส่งให้ frontend
-- **ความเป็นส่วนตัว**: โปรเจกต์นี้ออกแบบให้ไม่เก็บรูปสลิปต้นฉบับ (อ่าน OCR แล้วทิ้ง เก็บเฉพาะข้อมูลที่ดึงได้) และ `.gitignore` กันโฟลเดอร์ `slips/` ไม่ให้หลุดขึ้น repo
-- **ตั้งตารางด้วย `create_all`** ตอนเริ่มระบบ เพราะเป็น portfolio ขนาดเล็ก ถ้า schema เริ่มเปลี่ยนบ่อยให้ย้ายไป Alembic
-- **ยังไม่ได้ตรวจว่าสลิปเป็นของจริงจากธนาคาร** เพราะแอปนี้เป็นการบันทึกส่วนตัว ผู้ใช้ไม่มีเหตุผลต้องปลอมสลิปตัวเอง (ถ้าจะทำต่อ ต้องใช้บริการตรวจสลิปภายนอก)
+- **Store currency as `Numeric(12, 2)`** in the database (never float) and serialize as numbers for the frontend.
+- **Privacy First**: Original slip images are processed in-memory and never stored on disk. Slips directory is excluded via `.gitignore`.
+- **Database Initialization**: Uses `Base.metadata.create_all()` on startup for simplicity in early phases. Switch to Alembic if schema migrations become frequent.
+- **Bank Verification**: Does not verify authenticity with bank APIs as this is a personal tracker where users have no incentive to forge their own slips.
 
 ## Roadmap
 
-- [x] Backend: auth, ธุรกรรม, หมวดหมู่, สรุปรายเดือน, Docker, tests
-- [ ] OCR: อัปโหลดรูป → อ่านยอด/วันที่/ผู้รับ/เลขอ้างอิง (parser แยกตามธนาคาร + unit test จากสลิปจำลอง)
-- [ ] Frontend (Next.js): login, รายการ, หน้ายืนยันข้อมูลจาก OCR, dashboard กราฟ
-- [ ] Deploy (Vercel + Render) และใส่ลิงก์ demo / screenshot ที่นี่
-- [ ] Export CSV, งบประมาณรายหมวด
+- [x] Backend: Auth, transactions, categories, monthly summary, Docker, tests
+- [ ] OCR: Upload image → extract amount/date/merchant/reference (bank-specific parser + unit tests with synthetic slips)
+- [ ] Frontend (Next.js): Login, transaction list, OCR confirmation screen, dashboard charts
+- [ ] Deployment (Vercel + Render) with live demo / screenshots
+- [ ] Export CSV, category budgets
