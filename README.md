@@ -52,16 +52,16 @@ Tests run against an in-memory SQLite database (PostgreSQL not required for test
 
 ## API Overview
 
-| Method | Path | Description |
-|---|---|---|
-| POST | `/auth/register` | `{email, password}` - Creates account and seeds default categories |
-| POST | `/auth/login` | Form-data `username`, `password` → `{access_token, token_type}` |
-| GET | `/auth/me` | Current user profile |
-| GET / POST | `/categories` | List or create categories |
-| DELETE | `/categories/{id}` | Deletes category; associated transactions become "Uncategorized" |
-| GET / POST | `/transactions` | Filters: `start`, `end`, `category_id`, `q`, `limit`, `offset` |
-| GET / PATCH / DELETE | `/transactions/{id}` | Get, update, or delete transaction |
-| GET | `/summary/monthly?month=YYYY-MM` | Monthly spending breakdown & daily chart data |
+| Method               | Path                               | Description                                                                |
+| -------------------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| POST                 | `/auth/register`                 | `{email, password}` - Creates account and seeds default categories       |
+| POST                 | `/auth/login`                    | Form-data `username`, `password` → `{access_token, token_type}`     |
+| GET                  | `/auth/me`                       | Current user profile                                                       |
+| GET / POST           | `/categories`                    | List or create categories                                                  |
+| DELETE               | `/categories/{id}`               | Deletes category; associated transactions become "Uncategorized"           |
+| GET / POST           | `/transactions`                  | Filters: `start`, `end`, `category_id`, `q`, `limit`, `offset` |
+| GET / PATCH / DELETE | `/transactions/{id}`             | Get, update, or delete transaction                                         |
+| GET                  | `/summary/monthly?month=YYYY-MM` | Monthly spending breakdown & daily chart data                              |
 
 Include header `Authorization: Bearer <token>` on all endpoints except register, login, and health.
 
@@ -74,7 +74,7 @@ Include header `Authorization: Bearer <token>` on all endpoints except register,
 
 ## Roadmap
 
-- [x] Backend: Auth, transactions, categories, monthly summary, Docker, tests
+- [X] Backend: Auth, transactions, categories, monthly summary, Docker, tests
 - [ ] OCR: Upload image → extract amount/date/merchant/reference (bank-specific parser + unit tests with synthetic slips)
 - [ ] Frontend (Next.js): Login, transaction list, OCR confirmation screen, dashboard charts
 - [ ] Deployment (Vercel + Render) with live demo / screenshots
