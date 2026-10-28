@@ -71,6 +71,18 @@ class CategoryCreate(BaseModel):
         return v
 
 
+class CategoryUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+
+    @field_validator("name")
+    @classmethod
+    def _strip(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("name must not be blank")
+        return v
+
+
 class CategoryOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int

@@ -1,3 +1,6 @@
+import os
+import subprocess
+import sys
 from datetime import datetime, timedelta, timezone
 
 from tests.conftest import register_and_login
@@ -202,6 +205,65 @@ def test_category_crud_and_delete_clears_transactions(client, auth):
     assert again["category_id"] is None
 
 
+def test_rename_category_success(client, auth):
+    cid = category_id(client, auth, "Food")
+    r = client.patch(f"/categories/{cid}", json={"name": "Groceries"}, headers=auth)
+    assert r.status_code == 200
+    assert r.json()["id"] == cid
+    assert r.json()["name"] == "Groceries"
+
+    # Verify reflected in list
+    names = [c["name"] for c in client.get("/categories", headers=auth).json()]
+    assert "Groceries" in names and "Food" not in names
+
+
+def test_rename_category_duplicate_conflict_409(client, auth):
+    food_id = category_id(client, auth, "Food")
+    # Attempting to rename Food to Shopping which already exists
+    r = client.patch(f"/categories/{food_id}", json={"name": "Shopping"}, headers=auth)
+    assert r.status_code == 409
+
+
+def test_rename_category_cross_user_and_unknown_404(client):
+    a = register_and_login(client, "a@example.com")
+    b = register_and_login(client, "b@example.com")
+    a_cat = client.get("/categories", headers=a).json()[0]["id"]
+
+    # b cannot rename a's category
+    assert client.patch(f"/categories/{a_cat}", json={"name": "Hacked"}, headers=b).status_code == 404
+    # non-existent category
+    assert client.patch("/categories/999999", json={"name": "Ghost"}, headers=a).status_code == 404
+
+
+def test_rename_category_preserves_transactions_and_merchant_rules(client, auth):
+    r = client.post("/categories", json={"name": "Coffee"}, headers=auth)
+    assert r.status_code == 201
+    cid = r.json()["id"]
+
+    # Create transaction with category Coffee & merchant Starbucks (learns rule)
+    tx = client.post("/transactions", json=make_tx(merchant="Starbucks", category_id=cid), headers=auth).json()
+    assert tx["category_id"] == cid
+
+    # Rename Coffee -> Drinks & Coffee
+    rename_resp = client.patch(f"/categories/{cid}", json={"name": "Drinks & Coffee"}, headers=auth)
+    assert rename_resp.status_code == 200
+    assert rename_resp.json()["name"] == "Drinks & Coffee"
+
+    # Existing transaction still references the category
+    tx_after = client.get(f"/transactions/{tx['id']}", headers=auth).json()
+    assert tx_after["category_id"] == cid
+
+    # Subsequent transaction from learned merchant inherits the renamed category
+    auto_tx = client.post("/transactions", json=make_tx(merchant="Starbucks", amount=150), headers=auth).json()
+    assert auto_tx["category_id"] == cid
+
+
+def test_rename_category_blank_name_rejected_422(client, auth):
+    cid = category_id(client, auth, "Food")
+    r = client.patch(f"/categories/{cid}", json={"name": "   "}, headers=auth)
+    assert r.status_code == 422
+
+
 # ---------- summary ----------
 def test_monthly_summary(client, auth):
     food, travel = category_id(client, auth, "Food"), category_id(client, auth, "Transportation")
@@ -240,3 +302,19 @@ def test_summary_rejects_bad_month(client, auth):
 
 def test_health(client):
     assert client.get("/health").json() == {"status": "ok"}
+
+
+def test_test_database_url_matching_database_url_aborts():
+    env = os.environ.copy()
+    env["DATABASE_URL"] = "postgresql://user:pass@localhost:5432/same_db"
+    env["TEST_DATABASE_URL"] = "postgresql://user:pass@localhost:5432/same_db"
+    res = subprocess.run(
+        [sys.executable, "-m", "pytest", "-k", "test_health"],
+        env=env,
+        capture_output=True,
+        text=True,
+        cwd=os.path.join(os.path.dirname(__file__), ".."),
+    )
+    assert res.returncode != 0
+    assert "TEST_DATABASE_URL equals DATABASE_URL" in res.stderr or "TEST_DATABASE_URL equals DATABASE_URL" in res.stdout
+
