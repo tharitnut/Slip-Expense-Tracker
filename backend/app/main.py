@@ -4,13 +4,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import models  # noqa: F401  (registers tables on Base.metadata)
-from app.config import get_settings
+from app.config import get_settings, validate_production_security
 from app.database import Base, engine
 from app.routers import auth, categories, summary, transactions
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # Enforce production security check on boot
+    validate_production_security(get_settings())
+
     # Fine for a portfolio project; switch to Alembic migrations if the schema starts changing often.
     Base.metadata.create_all(bind=engine)
     yield

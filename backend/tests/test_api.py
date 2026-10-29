@@ -3,6 +3,12 @@ import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from app.config import Settings, get_settings, validate_production_security
+from app.main import lifespan
 from tests.conftest import register_and_login
 
 
@@ -317,4 +323,48 @@ def test_test_database_url_matching_database_url_aborts():
     )
     assert res.returncode != 0
     assert "TEST_DATABASE_URL equals DATABASE_URL" in res.stderr or "TEST_DATABASE_URL equals DATABASE_URL" in res.stdout
+
+
+def test_production_mode_refuses_default_secret_key():
+    settings = Settings(env="production", secret_key="dev-only-change-me")
+    with pytest.raises(RuntimeError) as exc_info:
+        validate_production_security(settings)
+    assert "Insecure SECRET_KEY" in str(exc_info.value)
+
+    # Short secret key is also rejected
+    weak_settings = Settings(env="production", secret_key="too-short")
+    with pytest.raises(RuntimeError) as exc_info:
+        validate_production_security(weak_settings)
+    assert "Insecure SECRET_KEY" in str(exc_info.value)
+
+    # Valid production secret key succeeds
+    secure_settings = Settings(
+        env="production",
+        secret_key="a-very-long-and-secure-random-secret-key-for-prod",
+    )
+    validate_production_security(secure_settings)
+
+    # Development mode does not raise even with dev default
+    dev_settings = Settings(env="development", secret_key="dev-only-change-me")
+    validate_production_security(dev_settings)
+
+
+def test_app_lifespan_refuses_production_default_secret(monkeypatch):
+    monkeypatch.setenv("ENV", "production")
+    monkeypatch.setenv("SECRET_KEY", "dev-only-change-me")
+    get_settings.cache_clear()
+
+    test_app = FastAPI(lifespan=lifespan)
+    with pytest.raises(RuntimeError) as exc_info:
+        with TestClient(test_app):
+            pass
+    assert "Insecure SECRET_KEY" in str(exc_info.value)
+
+    get_settings.cache_clear()
+
+
+def test_cors_origins_normalizes_trailing_slashes():
+    s = Settings(cors_origins="https://app.vercel.app/, http://localhost:3000/")
+    assert s.cors_origin_list == ["https://app.vercel.app", "http://localhost:3000"]
+
 
