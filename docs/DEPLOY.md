@@ -90,7 +90,7 @@ This guide walks you through deploying the **Slip Expense Tracker** full-stack a
 
 6. Expand **Advanced**:
    - **Health Check Path**: `/health`
-   - **Auto-Deploy**: `Yes`
+   - **Auto-Deploy**: `Yes` (or `After CI Checks Pass`)
 7. Click **Create Web Service**.
 8. Wait for the build to finish. Once live, copy your backend URL (e.g. `https://slip-expense-tracker-api.onrender.com`).
 
@@ -122,20 +122,19 @@ This guide walks you through deploying the **Slip Expense Tracker** full-stack a
 
 Run through this checklist to ensure all components are functioning properly on the live internet:
 
-- [ ] **Health Check**: Open `https://<render-backend>/health` in your browser. Verify it returns `{"status": "ok"}`.
-- [ ] **API Documentation**: Open `https://<render-backend>/docs`. Verify Swagger UI loads correctly.
-- [ ] **Frontend Home**: Open `https://<vercel-frontend>`. Verify automatic redirect to `/login`.
-- [ ] **Registration**: Navigate to `/register` and create a new account with email and password. Verify successful creation and auto-login into `/transactions`.
-- [ ] **CORS Verification**: Open Browser Developer Tools -> **Console** and **Network** tabs. Confirm there are **no CORS errors** when calling API endpoints.
-- [ ] **Transaction Creation**: Click **Add Expense** and create a transaction (e.g. `150.00 THB`, merchant `Starbucks`, date & time). Verify it appears immediately in the table.
-- [ ] **Category Management**: Go to `/categories`. Add a new category (e.g., `Coffee`), rename it to `Cafes & Coffee`, and verify changes reflect on the UI.
-- [ ] **Auto-Categorization Test**: Add a transaction from merchant `Starbucks` without choosing a category. Verify it inherits `Cafes & Coffee` from learned merchant rules.
-- [ ] **Session Persistence**: Refresh the browser page (`F5`). Verify you remain logged in and your state is retained.
-- [ ] **Data Persistence Verification**:
-  - Restart the backend service in the Render Dashboard (**Manual Deploy -> Trigger Deploy** or restart).
+- [x] **Health Check**: Open `https://<render-backend>/health` in your browser. Verify it returns `{"status": "ok"}`.
+- [x] **API Documentation**: Open `https://<render-backend>/docs`. Verify Swagger UI loads correctly.
+- [x] **Frontend Home**: Open `https://<vercel-frontend>`. Verify automatic redirect to `/login`.
+- [x] **Registration**: Navigate to `/register` and create a new account with email and password. Verify successful creation and auto-login into `/transactions`.
+- [x] **CORS Verification**: Open Browser Developer Tools -> **Console** and **Network** tabs. Confirm there are **no CORS errors** when calling API endpoints.
+- [x] **Transaction Creation**: Click **Add Expense** and create a transaction (e.g. `150.00 THB`, merchant `Starbucks`, date & time). Verify it appears immediately in the table.
+- [x] **Category Management**: Go to `/categories`. Add a new category (e.g., `Coffee`), rename it to `Cafes & Coffee`, and verify changes reflect on the UI.
+- [x] **Auto-Categorization Test**: Add a transaction from merchant `Starbucks` without choosing a category. Verify it inherits `Cafes & Coffee` from learned merchant rules.
+- [x] **Session Persistence**: Refresh the browser page (`F5`). Verify you remain logged in and your state is retained.
+- [x] **Data Persistence Verification**:
+  - Restart the backend service in the Render Dashboard (**Manual Deploy -> Restart service**).
   - Refresh the frontend page.
   - Verify that your user account and all recorded transactions remain intact (proves data is saved to PostgreSQL on Neon, not temporary SQLite storage).
-- [ ] **Security Verification**:
+- [x] **Security Verification**:
   - Verify that repository has no committed `.env` files or secrets.
   - Verify `SECRET_KEY` in Render environment variables is unique and not the development default.
-

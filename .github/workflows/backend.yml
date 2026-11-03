@@ -37,6 +37,11 @@ jobs:
             backend/requirements.txt
             backend/requirements-dev.txt
 
+      - name: Install system dependencies (Tesseract OCR)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-tha tesseract-ocr-eng
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

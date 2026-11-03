@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import models  # noqa: F401  (registers tables on Base.metadata)
 from app.config import get_settings, validate_production_security
 from app.database import Base, engine
-from app.routers import auth, categories, summary, transactions
+from app.routers import auth, categories, slips, summary, transactions
 
 
 @asynccontextmanager
@@ -32,6 +32,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(transactions.router)
+app.include_router(slips.router)
 app.include_router(summary.router)
 
 
