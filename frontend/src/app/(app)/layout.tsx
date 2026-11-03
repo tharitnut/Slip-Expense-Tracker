@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   Wallet,
   ReceiptText,
+  ScanLine,
   Tags,
   LayoutDashboard,
   LogOut,
@@ -27,6 +28,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const navItems = [
     { label: "Transactions", href: "/transactions", icon: ReceiptText },
+    { label: "Scan Slip", href: "/upload", icon: ScanLine },
     { label: "Categories", href: "/categories", icon: Tags },
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   ];

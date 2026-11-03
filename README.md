@@ -114,7 +114,7 @@ npm run build
 ## Roadmap
 
 - [X] **Phase 0 & A (Backend & CI)**: Auth, CRUD, learned auto-categorization, duplicate detection, PostgreSQL test support, and GitHub Actions CI.
-- [ ] **Phase B (Frontend)**: Next.js App Router, Auth UI (completed), Transactions management & Category manager (in progress).
-- [ ] **Phase C (Deployment)**: Render (Backend) + Vercel (Frontend) + Neon (Hosted PostgreSQL).
-- [ ] **Phase D (OCR)**: Bank transfer slip scanning with Tesseract & bank-specific parsers.
+- [X] **Phase B (Frontend Core)**: Next.js App Router, Auth UI, Transactions management with filters & search, Category manager.
+- [X] **Phase C (Cloud Deployment)**: Render (Backend) + Vercel (Frontend) + Neon (Hosted PostgreSQL).
+- [X] **Phase D (OCR Slip Scanning)**: In-memory Tesseract OCR engine, Thai bank slip parser, `POST /slips/parse`, and interactive `/upload` page with drag-and-drop & 1-click sample slip demo.
 - [ ] **Phase E (Dashboard & Extras)**: Monthly interactive charts (Recharts) and CSV Export.

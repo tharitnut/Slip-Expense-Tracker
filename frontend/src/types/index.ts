@@ -21,3 +21,12 @@ export interface TransactionPage {
   offset: number;
 }
 
+export interface ParsedSlip {
+  amount: number | null;
+  occurred_at: string | null;
+  merchant: string | null;
+  slip_ref: string | null;
+  bank: string | null;
+  missing_fields: string[];
+}
+

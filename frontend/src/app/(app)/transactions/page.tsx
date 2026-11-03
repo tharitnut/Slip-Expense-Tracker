@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Category, Transaction, TransactionPage } from "@/types";
@@ -9,6 +10,7 @@ import { TransactionModal } from "@/components/TransactionModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import {
   Plus,
+  ScanLine,
   Search,
   Calendar,
   Filter,
@@ -183,13 +185,22 @@ export default function TransactionsPage() {
             View, filter, and manage your personal spending records
           </p>
         </div>
-        <button
-          onClick={handleOpenAddModal}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm hover:shadow"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Expense</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/upload"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium text-sm transition shadow-sm border border-blue-100"
+          >
+            <ScanLine className="w-4 h-4 text-blue-600" />
+            <span>Scan Slip</span>
+          </Link>
+          <button
+            onClick={handleOpenAddModal}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm hover:shadow"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Expense</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
