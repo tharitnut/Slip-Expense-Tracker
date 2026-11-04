@@ -1,59 +1,122 @@
-# Slip Expense Tracker
+# Slip Expense Tracker 🧾💸
 
-A personal expense tracking web application. Record spending manually or automatically by uploading Thai bank transfer slips (via OCR), with automatic merchant-based categorization and monthly dashboard summaries.
+[![CI Backend](https://github.com/tharitnut/Slip-Expense-Tracker/actions/workflows/backend.yml/badge.svg)](https://github.com/tharitnut/Slip-Expense-Tracker/actions/workflows/backend.yml)
+[![CI Frontend](https://github.com/tharitnut/Slip-Expense-Tracker/actions/workflows/frontend.yml/badge.svg)](https://github.com/tharitnut/Slip-Expense-Tracker/actions/workflows/frontend.yml)
 
-## Features
-
-- **Authentication**: Register / Login (JWT, bcrypt password hashing), user data isolation (users only see their own records).
-- **Transactions Management**: Create, search, filter by month/category, and pagination (limit 20 per page).
-- **Duplicate Slip Prevention**: Uses bank reference number (`slip_ref`, unique per user). If missing, falls back to matching amount + timestamp + merchant.
-- **Learned Auto-Categorization**: When a user assigns a category to a merchant, subsequent transactions from that same merchant are auto-categorized.
-- **Monthly Summary**: Total spending, month-over-month change (%), breakdown by category, and daily totals.
-- **Validation**: Amount must be > 0 with at most 2 decimal places; transaction dates cannot be in the future.
-- **Continuous Integration (CI)**: Automated GitHub Actions running backend tests (SQLite & PostgreSQL 16) and frontend quality checks (ESLint & Next.js production build).
-
-## Tech Stack
-
-- **Backend**: FastAPI · SQLAlchemy 2 · PostgreSQL (SQLite for local dev/testing) · Pydantic v2 · PyJWT · pytest
-- **Frontend**: Next.js (App Router, TypeScript) · Tailwind CSS · TanStack Query · react-hook-form + zod · Lucide Icons
+A modern full-stack personal finance web application built to streamline everyday spending. Users can log expenses manually or upload Thai bank transfer slips (via in-memory Tesseract OCR) to automatically extract transaction details, benefit from learned merchant categorization, and analyze spending through an interactive monthly dashboard.
 
 ---
 
-## Getting Started
+## 🌐 Live Deployments
 
-### 1. Run Backend (FastAPI)
+- **Web Application**: [https://slip-expense-tracker-nine.vercel.app](https://slip-expense-tracker-nine.vercel.app) *(Hosted on Vercel)*
+- **API Server & Swagger UI**: [https://slip-expense-tracker.onrender.com/docs](https://slip-expense-tracker.onrender.com/docs) *(Hosted on Render)*
+- **Database**: PostgreSQL 16 on Neon Serverless Cloud
+
+---
+
+## ✨ Key Features
+
+- **📸 Bank Transfer Slip OCR (Privacy-First)**:
+  - Powered by Tesseract OCR 5 with Thai (`tha`) and English (`eng`) language models.
+  - Image preprocessing with Pillow (grayscale conversion, upscaling, contrast enhancement).
+  - Regex-based bank parsers extracting Amount, Gregorian Date & Time (automatically converting Thai Buddhist Era `25xx` to `20xx`), Merchant / Payee, and Bank Slip Reference numbers.
+  - **Privacy Guarantee**: Slip images are processed purely in-memory and are **never** stored on disk or in the database.
+- **🛡️ Duplicate Slip Detection**:
+  - Automatically prevents duplicate records (HTTP 409 Conflict) based on slip reference numbers (`slip_ref`).
+  - Fallback fuzzy heuristic detection (matching amount, timestamp, and merchant).
+- **🧠 Learned Auto-Categorization**:
+  - Remembers user preferences: when you assign a category to a merchant, future transactions from that same merchant are auto-categorized automatically.
+- **📊 Interactive Monthly Dashboard (Recharts)**:
+  - 4 Key KPI metrics: Total Spending, Month-over-Month Delta (%), Transaction Count, and Daily Average.
+  - Visual category breakdown donut chart with percentage distribution.
+  - Daily spending bar chart showing daily spending trends.
+  - 12-month navigation selector.
+  - Real-time cache synchronization with TanStack Query.
+- **📥 CSV Data Export**:
+  - Export transactions with one click.
+  - Includes **UTF-8 BOM (`\ufeff`)** encoding to ensure Thai characters and text render cleanly in Microsoft Excel, Apple Numbers, and Google Sheets without encoding issues.
+- **🔐 Secure Authentication & Data Isolation**:
+  - User registration & login with JWT Bearer tokens and bcrypt password hashing.
+  - Strict user-scoped database queries (users can never access or query another user's records; unauthorized access returns 404).
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer                 | Technologies                                                                                                                                                                                       |
+| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Frontend**    | **Next.js 16** (App Router), **TypeScript**, **Tailwind CSS**, **TanStack Query v5**, **React Hook Form**, **Zod**, **Recharts**, **Lucide Icons** |
+| **Backend**     | **FastAPI**, **SQLAlchemy 2**, **Pydantic v2**, **PyJWT**, **bcrypt**, **Tesseract OCR (pytesseract + Pillow)**                                                |
+| **Database**    | **PostgreSQL 16** (Neon Hosted Database) · SQLite in-memory for testing                                                                                                                     |
+| **DevOps & CI** | **Docker**, **GitHub Actions** (Automated SQLite & PostgreSQL CI matrix), **Render**, **Vercel**                                                                           |
+
+---
+
+## 📡 API Overview
+
+| Method                         | Path                     | Description                                                                                 |
+| :----------------------------- | :----------------------- | :------------------------------------------------------------------------------------------ |
+| **POST**                 | `/auth/register`       | Register new user account; seeds 7 default categories                                       |
+| **POST**                 | `/auth/login`          | OAuth2 form-data login → returns `{ access_token, token_type }`                          |
+| **GET**                  | `/auth/me`             | Fetch authenticated user profile                                                            |
+| **GET / POST**           | `/categories`          | List or create categories                                                                   |
+| **PATCH / DELETE**       | `/categories/{id}`     | Rename category or delete (reassigns linked transactions to uncategorized)                  |
+| **GET / POST**           | `/transactions`        | List paginated transactions (filters: `start`, `end`, `category_id`, `q`) or create |
+| **GET / PATCH / DELETE** | `/transactions/{id}`   | Retrieve, update, or remove transaction record                                              |
+| **GET**                  | `/transactions/export` | Download transactions as CSV with UTF-8 BOM (optional `month` filter)                     |
+| **POST**                 | `/slips/parse`         | In-memory OCR scan of bank transfer slip image (<= 5MB)                                     |
+| **GET**                  | `/summary/monthly`     | Monthly spending KPIs, category breakdown, and daily totals (`?month=YYYY-MM`)            |
+| **GET**                  | `/health`              | Service health check                                                                        |
+
+> Include header `Authorization: Bearer <token>` on all protected endpoints.
+
+---
+
+## 💻 Local Development Setup
+
+### Prerequisites
+
+- Python 3.11+
+- Node.js 20+ & npm
+- Tesseract OCR (with Thai `tha` and English `eng` language packs installed)
+
+### 1. Backend Setup (FastAPI)
 
 ```bash
-# Terminal 1: Navigate to backend and activate virtualenv
+# 1. Navigate to backend
 cd backend
 
-# On Windows (PowerShell):
-..\.venv\Scripts\Activate.ps1   # or .venv\Scripts\activate
-
-# On Linux/macOS:
+# 2. Activate virtual environment
+# Windows:
+..\.venv\Scripts\Activate.ps1
+# Linux/macOS:
 source ../.venv/bin/activate
 
-# Install dependencies (if not already installed)
+# 3. Install dependencies
 pip install -r requirements-dev.txt
 
-# Start backend server
+# 4. Copy environment variables
+cp .env.example .env
+
+# 5. Start development server
 uvicorn app.main:app --reload
 ```
 
 - API Base URL: `http://localhost:8000`
-- Interactive Swagger UI: `http://localhost:8000/docs`
+- Swagger Documentation: `http://localhost:8000/docs`
 - Health Check: `http://localhost:8000/health`
 
-### 2. Run Frontend (Next.js)
+### 2. Frontend Setup (Next.js)
 
 ```bash
-# Terminal 2: Navigate to frontend and start dev server
+# 1. Navigate to frontend
 cd frontend
 
-# Install dependencies (if not already installed)
+# 2. Install dependencies
 npm install
 
-# Start development server
+# 3. Start development server
 npm run dev
 ```
 
@@ -61,18 +124,20 @@ npm run dev
 
 ---
 
-## Running Tests & Checks
+## 🧪 Testing & Code Quality
 
-### Backend Tests (pytest)
+### Backend Automated Tests (pytest)
+
+Runs **51 comprehensive tests** covering authentication, CRUD, learned auto-categorization, duplicate detection heuristics, OCR parser logic, and CSV exports:
 
 ```bash
 cd backend
 pytest
 ```
 
-Tests run against an in-memory SQLite database by default (or against PostgreSQL when `TEST_DATABASE_URL` is set).
+### Frontend Typecheck & Build
 
-### Frontend Checks (Lint & Build)
+Runs ESLint and compiles production Next.js static routes:
 
 ```bash
 cd frontend
@@ -82,39 +147,10 @@ npm run build
 
 ---
 
-## API Overview
+## 🗺️ Project Milestones & Roadmap
 
-| Method               | Path                               | Description                                                                |
-| -------------------- | ---------------------------------- | -------------------------------------------------------------------------- |
-| POST                 | `/auth/register`                 | `{email, password}` - Creates account and seeds default categories       |
-| POST                 | `/auth/login`                    | Form-data `username`, `password` → `{access_token, token_type}`     |
-| GET                  | `/auth/me`                       | Current user profile                                                       |
-| GET / POST           | `/categories`                    | List or create categories                                                  |
-| PATCH                | `/categories/{id}`               | Rename category (preserves transactions and learned rules)                 |
-| DELETE               | `/categories/{id}`               | Deletes category; associated transactions become "Uncategorized"           |
-| GET / POST           | `/transactions`                  | Filters: `start`, `end`, `category_id`, `q`, `limit`, `offset` |
-| GET / PATCH / DELETE | `/transactions/{id}`             | Get, update, or delete transaction                                         |
-| GET                  | `/summary/monthly?month=YYYY-MM` | Monthly spending breakdown & daily chart data                              |
-| GET                  | `/health`                        | Health check endpoint                                                      |
-
-> Include header `Authorization: Bearer <token>` on all protected endpoints.
-
----
-
-## Architectural & Design Decisions
-
-- **Store currency as `Numeric(12, 2)`**: Money values are stored as high-precision decimals in the database (never float) and serialized cleanly as numbers for the frontend.
-- **Token Storage in `localStorage`**: For project scope and ease of integration across separate frontend/backend deployments, the JWT access token is kept in `localStorage`. We acknowledge that `httpOnly` cookies provide better mitigation against XSS, but `localStorage` was intentionally chosen for simplicity at this stage.
-- **Privacy First**: Bank slip images (when OCR is integrated) are processed in-memory and never stored on disk.
-- **Database Initialization**: Uses `Base.metadata.create_all()` on startup for simplicity in early phases.
-- **Safe Test Isolation**: `TEST_DATABASE_URL` creates and drops all tables per test run and strictly verifies it does not match `DATABASE_URL` to prevent accidental data loss.
-
----
-
-## Roadmap
-
-- [X] **Phase 0 & A (Backend & CI)**: Auth, CRUD, learned auto-categorization, duplicate detection, PostgreSQL test support, and GitHub Actions CI.
-- [X] **Phase B (Frontend Core)**: Next.js App Router, Auth UI, Transactions management with filters & search, Category manager.
-- [X] **Phase C (Cloud Deployment)**: Render (Backend) + Vercel (Frontend) + Neon (Hosted PostgreSQL).
-- [X] **Phase D (OCR Slip Scanning)**: In-memory Tesseract OCR engine, Thai bank slip parser, `POST /slips/parse`, and interactive `/upload` page with drag-and-drop & 1-click sample slip demo.
-- [X] **Phase E (Dashboard & Extras)**: Monthly interactive charts (Recharts) and CSV Export.
+- [X] **Phase 0 & A (Backend Hardening & CI)**: Auth, CRUD, auto-categorization rules, duplicate prevention, PostgreSQL test suite, and GitHub Actions CI.
+- [X] **Phase B (Frontend Core)**: Next.js App Router, Tailwind UI, TanStack Query integration, Transactions table, Category manager, and mobile responsive layout.
+- [X] **Phase C (Cloud Deployment)**: Render (Backend Docker Web Service) + Vercel (Frontend Next.js) + Neon (Serverless PostgreSQL 16).
+- [X] **Phase D (Bank Slip OCR)**: In-memory Tesseract OCR engine, Thai transfer slip parsers, `POST /slips/parse`, and `/upload` UI with 1-click sample slip demo.
+- [X] **Phase E (Dashboard & Extras)**: Monthly interactive Recharts analytics (Donut & Bar charts), real-time query invalidation, and UTF-8 BOM CSV Export.
