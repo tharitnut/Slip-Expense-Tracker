@@ -63,6 +63,7 @@ export default function CategoriesPage() {
       await api.delete(`/categories/${deletingCategory.id}`);
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
       setDeletingCategory(null);
     } catch {
       // error handled in toast / modal
@@ -225,6 +226,7 @@ export default function CategoriesPage() {
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["categories"] });
           queryClient.invalidateQueries({ queryKey: ["transactions"] });
+          queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
         }}
       />
 

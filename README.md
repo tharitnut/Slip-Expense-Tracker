@@ -117,4 +117,4 @@ npm run build
 - [X] **Phase B (Frontend Core)**: Next.js App Router, Auth UI, Transactions management with filters & search, Category manager.
 - [X] **Phase C (Cloud Deployment)**: Render (Backend) + Vercel (Frontend) + Neon (Hosted PostgreSQL).
 - [X] **Phase D (OCR Slip Scanning)**: In-memory Tesseract OCR engine, Thai bank slip parser, `POST /slips/parse`, and interactive `/upload` page with drag-and-drop & 1-click sample slip demo.
-- [ ] **Phase E (Dashboard & Extras)**: Monthly interactive charts (Recharts) and CSV Export.
+- [X] **Phase E (Dashboard & Extras)**: Monthly interactive charts (Recharts) and CSV Export.

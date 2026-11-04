@@ -173,4 +173,23 @@ export const api = {
       ...options,
     }),
   delete: <T>(url: string, options?: FetchOptions) => apiFetch<T>(url, { method: "DELETE", ...options }),
+  downloadCsv: async (month?: string) => {
+    const token = getToken();
+    const endpoint = month ? `/transactions/export?month=${month}` : "/transactions/export";
+    const res = await fetch(`${API_URL}${endpoint}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      throw new ApiError(res.status, "Failed to download CSV");
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = month ? `transactions_${month}.csv` : "transactions.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 };

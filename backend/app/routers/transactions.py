@@ -1,4 +1,6 @@
+import csv
 from datetime import datetime
+import io
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 from sqlalchemy import func, or_, select
@@ -138,6 +140,64 @@ def list_transactions(
         .offset(offset)
     ).all()
     return TransactionPage(items=items, total=total, limit=limit, offset=offset)
+
+
+@router.get("/export")
+def export_transactions_csv(
+    user: CurrentUser,
+    db: DbSession,
+    month: str | None = Query(default=None, pattern=r"^\d{4}-(0[1-9]|1[0-2])$"),
+    start: datetime | None = None,
+    end: datetime | None = Query(default=None, description="Exclusive upper bound"),
+    category_id: int | None = None,
+):
+    conditions = [Transaction.user_id == user.id]
+    if month:
+        year, mon = (int(p) for p in month.split("-"))
+        m_start = datetime(year, mon, 1)
+        m_end = datetime(year + 1, 1, 1) if mon == 12 else datetime(year, mon + 1, 1)
+        conditions.append(Transaction.occurred_at >= m_start)
+        conditions.append(Transaction.occurred_at < m_end)
+    else:
+        if start is not None:
+            conditions.append(Transaction.occurred_at >= start)
+        if end is not None:
+            conditions.append(Transaction.occurred_at < end)
+
+    if category_id is not None:
+        conditions.append(Transaction.category_id == category_id)
+
+    rows = db.execute(
+        select(Transaction, Category.name)
+        .outerjoin(Category, Category.id == Transaction.category_id)
+        .where(*conditions)
+        .order_by(Transaction.occurred_at.desc(), Transaction.id.desc())
+    ).all()
+
+    output = io.StringIO()
+    # Write UTF-8 BOM so spreadsheet applications (Excel) render Thai characters correctly
+    output.write("\ufeff")
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Date & Time", "Amount (THB)", "Category", "Merchant", "Note", "Source", "Slip Reference"])
+
+    for tx, cat_name in rows:
+        writer.writerow([
+            tx.id,
+            tx.occurred_at.strftime("%Y-%m-%d %H:%M:%S") if tx.occurred_at else "",
+            f"{float(tx.amount):.2f}",
+            cat_name or "Uncategorized",
+            tx.merchant or "",
+            tx.note or "",
+            tx.source,
+            tx.slip_ref or "",
+        ])
+
+    filename = f"transactions_{month}.csv" if month else "transactions.csv"
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/{transaction_id}", response_model=TransactionOut)

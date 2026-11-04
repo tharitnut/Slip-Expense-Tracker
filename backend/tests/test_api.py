@@ -270,6 +270,50 @@ def test_rename_category_blank_name_rejected_422(client, auth):
     assert r.status_code == 422
 
 
+# ---------- transactions export ----------
+def test_export_transactions_csv(client, auth):
+    food = category_id(client, auth, "Food")
+    client.post(
+        "/transactions",
+        json=make_tx(amount=120.50, merchant="Cafe Amazon", category_id=food, occurred_at="2025-10-10T12:00:00"),
+        headers=auth,
+    )
+    client.post(
+        "/transactions",
+        json=make_tx(amount=45.00, merchant="7-Eleven", occurred_at="2025-10-12T14:30:00"),
+        headers=auth,
+    )
+
+    res = client.get("/transactions/export", headers=auth)
+    assert res.status_code == 200
+    assert "text/csv" in res.headers["content-type"]
+    assert 'filename="transactions.csv"' in res.headers["content-disposition"]
+    text = res.text
+    assert text.startswith("\ufeff")  # UTF-8 BOM
+    assert "ID,Date & Time,Amount (THB),Category,Merchant,Note,Source,Slip Reference" in text
+    assert "120.50,Food,Cafe Amazon" in text
+    assert "45.00,Uncategorized,7-Eleven" in text
+
+
+def test_export_csv_filtered_by_month(client, auth):
+    client.post(
+        "/transactions",
+        json=make_tx(amount=100, merchant="Oct Tx", occurred_at="2025-10-05T10:00:00"),
+        headers=auth,
+    )
+    client.post(
+        "/transactions",
+        json=make_tx(amount=200, merchant="Nov Tx", occurred_at="2025-11-05T10:00:00"),
+        headers=auth,
+    )
+
+    res_oct = client.get("/transactions/export", params={"month": "2025-10"}, headers=auth)
+    assert res_oct.status_code == 200
+    assert 'filename="transactions_2025-10.csv"' in res_oct.headers["content-disposition"]
+    assert "Oct Tx" in res_oct.text
+    assert "Nov Tx" not in res_oct.text
+
+
 # ---------- summary ----------
 def test_monthly_summary(client, auth):
     food, travel = category_id(client, auth, "Food"), category_id(client, auth, "Transportation")

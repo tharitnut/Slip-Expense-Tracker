@@ -12,6 +12,7 @@ import {
   Plus,
   ScanLine,
   Search,
+  Download,
   Calendar,
   Filter,
   Pencil,
@@ -77,6 +78,7 @@ export default function TransactionsPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Calculate start & end date for the selected month filter
   const { start, end } = useMemo(() => {
@@ -158,11 +160,23 @@ export default function TransactionsPage() {
       await api.delete(`/transactions/${deletingTransaction.id}`);
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
       setDeletingTransaction(null);
     } catch {
       // error handled in alert or toast
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      await api.downloadCsv(selectedMonth || undefined);
+    } catch {
+      // export handled
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -185,7 +199,16 @@ export default function TransactionsPage() {
             View, filter, and manage your personal spending records
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={handleExportCsv}
+            disabled={isExporting}
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium text-sm transition shadow-sm cursor-pointer disabled:opacity-50"
+            title="Export transactions as CSV"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
           <Link
             href="/upload"
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium text-sm transition shadow-sm border border-blue-100"
@@ -195,7 +218,7 @@ export default function TransactionsPage() {
           </Link>
           <button
             onClick={handleOpenAddModal}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm hover:shadow"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm hover:shadow cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Expense</span>
@@ -532,6 +555,7 @@ export default function TransactionsPage() {
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["transactions"] });
           queryClient.invalidateQueries({ queryKey: ["categories"] });
+          queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
         }}
       />
 

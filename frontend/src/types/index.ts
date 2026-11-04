@@ -30,3 +30,26 @@ export interface ParsedSlip {
   missing_fields: string[];
 }
 
+export interface CategoryTotal {
+  category_id: number | null;
+  category_name: string;
+  total: number;
+  percent: number;
+}
+
+export interface DailyTotal {
+  date: string;
+  total: number;
+}
+
+export interface MonthlySummary {
+  month: string;
+  total: number;
+  transaction_count: number;
+  previous_month_total: number;
+  change_percent: number | null;
+  by_category: CategoryTotal[];
+  daily: DailyTotal[];
+}
+
+
