@@ -1,26 +1,100 @@
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────
+   Quiet Ledger — Design Tokens
+   ────────────────────────────────────────────── */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Palette — Light */
+  --ql-bg: #FAF8F4;
+  --ql-surface: #FFFFFF;
+  --ql-border: #E8E4DC;
+  --ql-text: #1C2420;
+  --ql-muted: #6B746E;
+  --ql-primary: #1F4D3A;
+  --ql-primary-hover: #173A2B;
+  --ql-primary-light: #E8F0EC;
+  --ql-accent: #B08D57;
+  --ql-accent-light: #F5EFE3;
+  --ql-error: #A8453A;
+  --ql-error-light: #F5EDED;
+  --ql-success: #3A7D5C;
+  --ql-success-light: #EBF5F0;
 }
 
+.dark {
+  --ql-bg: #101512;
+  --ql-surface: #1A201C;
+  --ql-border: #2A322D;
+  --ql-text: #E8E4DC;
+  --ql-muted: #8A9490;
+  --ql-primary: #4A9E76;
+  --ql-primary-hover: #5CB88A;
+  --ql-primary-light: #1A2E24;
+  --ql-accent: #C9A86C;
+  --ql-accent-light: #2A2418;
+  --ql-error: #D4685D;
+  --ql-error-light: #2A1A18;
+  --ql-success: #5CB88A;
+  --ql-success-light: #1A2E24;
+}
+
+/* ──────────────────────────────────────────────
+   Tailwind v4 Theme — map CSS vars to utilities
+   ────────────────────────────────────────────── */
+
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  /* Colors */
+  --color-ql-bg: var(--ql-bg);
+  --color-ql-surface: var(--ql-surface);
+  --color-ql-border: var(--ql-border);
+  --color-ql-text: var(--ql-text);
+  --color-ql-muted: var(--ql-muted);
+  --color-ql-primary: var(--ql-primary);
+  --color-ql-primary-hover: var(--ql-primary-hover);
+  --color-ql-primary-light: var(--ql-primary-light);
+  --color-ql-accent: var(--ql-accent);
+  --color-ql-accent-light: var(--ql-accent-light);
+  --color-ql-error: var(--ql-error);
+  --color-ql-error-light: var(--ql-error-light);
+  --color-ql-success: var(--ql-success);
+  --color-ql-success-light: var(--ql-success-light);
+
+  /* Fonts */
+  --font-sans: var(--font-noto-sans-thai);
+  --font-serif: var(--font-fraunces);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ──────────────────────────────────────────────
+   Base Styles
+   ────────────────────────────────────────────── */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--ql-bg);
+  color: var(--ql-text);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Tabular numbers for money */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Receipt / dashed border card */
+.receipt-border {
+  border: 1px dashed var(--ql-border);
+}
+
+/* ──────────────────────────────────────────────
+   Motion — respect prefers-reduced-motion
+   ────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
 }

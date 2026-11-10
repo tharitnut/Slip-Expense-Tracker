@@ -7,6 +7,7 @@ import * as z from "zod";
 import { api, ApiError } from "@/lib/api";
 import { Category, Transaction } from "@/types";
 import { X, Loader2, DollarSign, Calendar, Store, Tag, FileText } from "lucide-react";
+import { Button } from "@/components/ui";
 
 const transactionSchema = z.object({
   amount: z
@@ -132,36 +133,36 @@ export function TransactionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-150">
+      <div className="w-full max-w-lg bg-ql-surface rounded-2xl shadow-lg border border-ql-border overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-          <h2 className="text-lg font-bold text-slate-900">
-            {initialData ? "Edit Transaction" : "Add New Expense"}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ql-border/60 bg-ql-bg/40">
+          <h2 className="text-lg font-serif font-semibold text-ql-text">
+            {initialData ? "Edit Transaction" : "Record Expense"}
           </h2>
           <button
             onClick={handleClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+            className="p-1.5 rounded-lg text-ql-muted hover:text-ql-text hover:bg-ql-bg transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
           {apiError && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+            <div className="p-3.5 rounded-xl bg-ql-error-light border border-ql-error/20 text-ql-error text-xs">
               {apiError}
             </div>
           )}
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Amount (THB) <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+              Amount (THB) <span className="text-ql-error">*</span>
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ql-muted">
                 <DollarSign className="w-4 h-4" />
               </span>
               <input
@@ -169,69 +170,75 @@ export function TransactionModal({
                 step="0.01"
                 placeholder="0.00"
                 {...register("amount")}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border ${
-                  errors.amount ? "border-red-500 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500"
-                } focus:outline-none focus:ring-2 text-slate-900 text-sm`}
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-ql-surface text-ql-text text-sm tabular-nums transition ${
+                  errors.amount
+                    ? "border-ql-error focus:ring-ql-error/30"
+                    : "border-ql-border focus:ring-ql-primary/30 focus:border-ql-primary"
+                } focus:outline-none focus:ring-2`}
               />
             </div>
-            {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount.message}</p>}
+            {errors.amount && <p className="text-ql-error text-xs mt-1">{errors.amount.message}</p>}
           </div>
 
           {/* Date & Time */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Date & Time <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+              Date & Time <span className="text-ql-error">*</span>
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ql-muted">
                 <Calendar className="w-4 h-4" />
               </span>
               <input
                 type="datetime-local"
                 {...register("occurred_at")}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border ${
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-ql-surface text-ql-text text-sm transition ${
                   errors.occurred_at
-                    ? "border-red-500 focus:ring-red-500"
-                    : "border-slate-200 focus:ring-blue-500"
-                } focus:outline-none focus:ring-2 text-slate-900 text-sm`}
+                    ? "border-ql-error focus:ring-ql-error/30"
+                    : "border-ql-border focus:ring-ql-primary/30 focus:border-ql-primary"
+                } focus:outline-none focus:ring-2`}
               />
             </div>
             {errors.occurred_at && (
-              <p className="text-red-500 text-xs mt-1">{errors.occurred_at.message}</p>
+              <p className="text-ql-error text-xs mt-1">{errors.occurred_at.message}</p>
             )}
           </div>
 
           {/* Merchant */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Merchant / Store
+            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+              Merchant / Payee
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ql-muted">
                 <Store className="w-4 h-4" />
               </span>
               <input
                 type="text"
                 placeholder="e.g. 7-Eleven, Starbucks, BTS"
                 {...register("merchant")}
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border ${
-                  errors.merchant ? "border-red-500 focus:ring-red-500" : "border-slate-200 focus:ring-blue-500"
-                } focus:outline-none focus:ring-2 text-slate-900 text-sm`}
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl border bg-ql-surface text-ql-text text-sm transition ${
+                  errors.merchant
+                    ? "border-ql-error focus:ring-ql-error/30"
+                    : "border-ql-border focus:ring-ql-primary/30 focus:border-ql-primary"
+                } focus:outline-none focus:ring-2`}
               />
             </div>
-            {errors.merchant && <p className="text-red-500 text-xs mt-1">{errors.merchant.message}</p>}
+            {errors.merchant && <p className="text-ql-error text-xs mt-1">{errors.merchant.message}</p>}
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+              Category
+            </label>
             <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ql-muted">
                 <Tag className="w-4 h-4" />
               </span>
               <select
                 {...register("category_id")}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-blue-500 focus:outline-none focus:ring-2 text-slate-900 text-sm bg-white"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-ql-border bg-ql-surface text-ql-text text-sm focus:ring-ql-primary/30 focus:border-ql-primary focus:outline-none focus:ring-2 transition"
               >
                 <option value="">-- Uncategorized (Auto-learn if matched) --</option>
                 {categories.map((c) => (
@@ -241,42 +248,46 @@ export function TransactionModal({
                 ))}
               </select>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
-              Tip: When you assign a category to a merchant, future transactions from that merchant will be auto-categorized!
+            <p className="text-xs text-ql-muted mt-1">
+              Selecting a category will remember the merchant rule automatically.
             </p>
           </div>
 
           {/* Note */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Note (Optional)</label>
+            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+              Note (Optional)
+            </label>
             <div className="relative">
-              <span className="absolute top-3 left-3.5 pointer-events-none text-slate-400">
+              <span className="absolute top-3 left-3.5 pointer-events-none text-ql-muted">
                 <FileText className="w-4 h-4" />
               </span>
               <textarea
                 rows={2}
-                placeholder="Additional details..."
+                placeholder="Additional memo or details..."
                 {...register("note")}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-blue-500 focus:outline-none focus:ring-2 text-slate-900 text-sm"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-ql-border bg-ql-surface text-ql-text text-sm focus:ring-ql-primary/30 focus:border-ql-primary focus:outline-none focus:ring-2 transition"
               />
             </div>
-            {errors.note && <p className="text-red-500 text-xs mt-1">{errors.note.message}</p>}
+            {errors.note && <p className="text-ql-error text-xs mt-1">{errors.note.message}</p>}
           </div>
 
           {/* Modal Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-            <button
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-ql-border/60">
+            <Button
               type="button"
+              variant="secondary"
+              size="md"
               onClick={handleClose}
               disabled={isSubmitting}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium text-sm hover:bg-slate-50 transition"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
               disabled={isSubmitting}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm flex items-center gap-2 disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
@@ -286,9 +297,9 @@ export function TransactionModal({
               ) : initialData ? (
                 "Save Changes"
               ) : (
-                "Add Expense"
+                "Record Expense"
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

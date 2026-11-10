@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { Category } from "@/types";
 import { CategoryModal } from "@/components/CategoryModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
+import { Card, Button } from "@/components/ui";
 import {
   Plus,
   Tag,
@@ -75,26 +76,28 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-ql-border/60">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Categories</h1>
-          <p className="text-slate-500 text-sm mt-0.5">
-            Organize your spending into custom categories for better budgeting
+          <h1 className="text-2xl font-serif font-semibold text-ql-text tracking-tight">Spending Categories</h1>
+          <p className="text-ql-muted text-sm mt-0.5">
+            Organize transactions and configure auto-categorization tags
           </p>
         </div>
-        <button
+        <Button
+          variant="primary"
+          size="md"
           onClick={handleOpenAddModal}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm hover:shadow"
+          className="shadow-xs"
         >
           <Plus className="w-4 h-4" />
           <span>New Category</span>
-        </button>
+        </Button>
       </div>
 
       {/* Search Bar */}
       {categories.length > 0 && (
         <div className="relative max-w-md">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ql-muted">
             <Search className="w-4 h-4" />
           </span>
           <input
@@ -102,12 +105,12 @@ export default function CategoriesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search categories..."
-            className="w-full pl-10 pr-9 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-900 bg-white"
+            className="w-full pl-10 pr-9 py-2 rounded-xl border border-ql-border bg-ql-surface text-sm text-ql-text placeholder:text-ql-muted focus:outline-none focus:ring-2 focus:ring-ql-primary/30 focus:border-ql-primary transition"
           />
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-ql-muted hover:text-ql-text transition"
             >
               <X className="w-4 h-4" />
             </button>
@@ -120,100 +123,101 @@ export default function CategoriesPage() {
         /* Loading Skeleton */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm animate-pulse space-y-3"
-            >
+            <Card key={i} className="p-5 animate-pulse space-y-3">
               <div className="flex items-center justify-between">
-                <div className="w-10 h-10 bg-slate-200 rounded-xl" />
-                <div className="w-12 h-6 bg-slate-100 rounded-lg" />
+                <div className="w-9 h-9 bg-ql-border/60 rounded-xl" />
+                <div className="w-12 h-5 bg-ql-border/40 rounded-lg" />
               </div>
-              <div className="h-5 bg-slate-200 rounded w-28" />
-            </div>
+              <div className="h-4 bg-ql-border/50 rounded w-28" />
+            </Card>
           ))}
         </div>
       ) : isError ? (
         /* Error State */
-        <div className="bg-white rounded-2xl border border-red-200 shadow-sm p-8 text-center space-y-3">
-          <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
-          <h3 className="text-base font-semibold text-slate-900">Failed to load categories</h3>
-          <p className="text-sm text-slate-500">Please check your connection and try again.</p>
-          <button
+        <Card className="p-8 text-center space-y-3 border-ql-error/30">
+          <AlertCircle className="w-8 h-8 text-ql-error mx-auto" />
+          <h3 className="text-base font-semibold text-ql-text">Failed to load categories</h3>
+          <p className="text-xs text-ql-muted">Please check your connection and try again.</p>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => refetch()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition"
+            className="gap-1.5"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
             <span>Try Again</span>
-          </button>
-        </div>
+          </Button>
+        </Card>
       ) : filteredCategories.length === 0 ? (
         /* Empty State */
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-12 text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+        <Card className="p-12 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-ql-primary-light text-ql-primary flex items-center justify-center mx-auto">
             <Layers className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-slate-900">No categories found</h3>
-            <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+            <h3 className="text-base font-serif font-semibold text-ql-text">No categories found</h3>
+            <p className="text-xs text-ql-muted mt-1 max-w-sm mx-auto">
               {search
-                ? `No categories match "${search}". Try searching for something else.`
-                : "You don't have any categories yet. Create your first category to start organizing your spending."}
+                ? `No categories match "${search}". Try clearing search.`
+                : "No categories exist yet. Create your first category to start organizing your spending."}
             </p>
           </div>
           {search ? (
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setSearch("")}
-              className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
             >
               Clear Search
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              variant="primary"
+              size="md"
               onClick={handleOpenAddModal}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
             >
               <Plus className="w-4 h-4" />
               <span>Create Category</span>
-            </button>
+            </Button>
           )}
-        </div>
+        </Card>
       ) : (
         /* Categories Cards Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredCategories.map((cat) => (
-            <div
+            <Card
               key={cat.id}
-              className="group bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-300 transition flex items-center justify-between"
+              className="group p-5 hover:border-ql-primary/40 transition-colors flex items-center justify-between"
             >
               <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition">
-                  <Tag className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl bg-ql-primary-light text-ql-primary flex items-center justify-center shrink-0 group-hover:bg-ql-primary group-hover:text-white transition-colors">
+                  <Tag className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-slate-900 text-sm truncate">
+                  <h3 className="font-medium text-ql-text text-sm truncate">
                     {cat.name}
                   </h3>
-                  <span className="text-[11px] text-slate-400">ID: #{cat.id}</span>
+                  <span className="text-[11px] text-ql-muted">Category #{cat.id}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition">
+              <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
                 <button
                   onClick={() => handleOpenEditModal(cat)}
                   title="Rename"
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
+                  className="p-1.5 rounded-lg text-ql-muted hover:text-ql-primary hover:bg-ql-primary-light transition cursor-pointer"
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setDeletingCategory(cat)}
                   title="Delete"
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition"
+                  className="p-1.5 rounded-lg text-ql-muted hover:text-ql-error hover:bg-ql-error-light transition cursor-pointer"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -239,7 +243,7 @@ export default function CategoriesPage() {
         title="Delete Category"
         message={
           deletingCategory
-            ? `Are you sure you want to delete the "${deletingCategory.name}" category? Any transactions associated with this category will become Uncategorized. This action cannot be undone.`
+            ? `Are you sure you want to delete "${deletingCategory.name}"? Transactions assigned to this category will become Uncategorized. This action cannot be undone.`
             : ""
         }
       />

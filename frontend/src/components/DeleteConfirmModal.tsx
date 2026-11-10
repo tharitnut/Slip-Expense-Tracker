@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui";
 
 interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -22,32 +23,35 @@ export function DeleteConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-6 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-150">
+      <div className="w-full max-w-md bg-ql-surface rounded-2xl shadow-lg border border-ql-border p-6 overflow-hidden">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-ql-error-light text-ql-error flex items-center justify-center shrink-0 border border-ql-error/20">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-            <p className="text-slate-500 text-sm mt-1">{message}</p>
+            <h3 className="text-lg font-serif font-semibold text-ql-text">{title}</h3>
+            <p className="text-ql-muted text-sm mt-1">{message}</p>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-          <button
+        <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-ql-border/60">
+          <Button
             type="button"
+            variant="secondary"
+            size="md"
             onClick={onClose}
             disabled={isDeleting}
-            className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-medium text-sm hover:bg-slate-50 transition"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="danger"
+            size="md"
             onClick={onConfirm}
             disabled={isDeleting}
-            className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium text-sm transition shadow-sm flex items-center gap-2 disabled:opacity-50"
+            className="bg-ql-error text-white hover:bg-ql-error/90 border-transparent focus:ring-ql-error/30"
           >
             {isDeleting ? (
               <>
@@ -57,10 +61,9 @@ export function DeleteConfirmModal({
             ) : (
               "Delete"
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
   );
 }
-
