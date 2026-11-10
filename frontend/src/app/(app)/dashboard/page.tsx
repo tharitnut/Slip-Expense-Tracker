@@ -463,12 +463,12 @@ export default function DashboardPage() {
                         data={summary.daily}
                         margin={{ top: 10, right: 10, left: 0, bottom: 25 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E8E4DC" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--ql-border, #E8E4DC)" vertical={false} />
                         <XAxis
                           dataKey="date"
                           tickFormatter={formatDayLabel}
-                          tick={{ fill: "#6B746E", fontSize: 11 }}
-                          axisLine={{ stroke: "#E8E4DC" }}
+                          tick={{ fill: "var(--ql-muted, #6B746E)", fontSize: 11 }}
+                          axisLine={{ stroke: "var(--ql-border, #E8E4DC)" }}
                           tickLine={false}
                           angle={-30}
                           textAnchor="end"
@@ -476,8 +476,8 @@ export default function DashboardPage() {
                         />
                         <YAxis
                           tickFormatter={(val) => `฿${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
-                          tick={{ fill: "#6B746E", fontSize: 11 }}
-                          axisLine={{ stroke: "#E8E4DC" }}
+                          tick={{ fill: "var(--ql-muted, #6B746E)", fontSize: 11 }}
+                          axisLine={{ stroke: "var(--ql-border, #E8E4DC)" }}
                           tickLine={false}
                           width={45}
                         />

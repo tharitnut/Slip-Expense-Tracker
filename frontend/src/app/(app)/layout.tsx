@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Wallet,
   ReceiptText,
@@ -71,7 +72,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <ThemeToggle />
+
             {user ? (
               <div className="hidden sm:flex items-center gap-2 text-xs text-ql-muted bg-ql-bg border border-ql-border px-3 py-1.5 rounded-full">
                 <UserIcon className="w-3 h-3 text-ql-muted" />
