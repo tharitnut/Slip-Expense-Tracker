@@ -3,7 +3,7 @@
 [![CI Backend](https://github.com/tharitnut/Slip-Expense-Tracker/actions/workflows/backend.yml/badge.svg)](https://github.com/tharitnut/Slip-Expense-Tracker/actions/workflows/backend.yml)
 [![CI Frontend](https://github.com/tharitnut/Slip-Expense-Tracker/actions/workflows/frontend.yml/badge.svg)](https://github.com/tharitnut/Slip-Expense-Tracker/actions/workflows/frontend.yml)
 
-A modern full-stack personal finance web application built to streamline everyday spending. Users can log expenses manually or upload Thai bank transfer slips (via in-memory Tesseract OCR) to automatically extract transaction details, benefit from learned merchant categorization, and analyze spending through an interactive monthly dashboard.
+A modern full-stack personal finance web application built to streamline everyday spending. Users can log expenses manually or upload Thai bank transfer slips (via in-memory Tesseract OCR) to automatically extract transaction details, benefit from learned merchant categorization, and analyze spending through an interactive monthly dashboard designed with a minimalist **"Quiet Ledger"** aesthetic.
 
 ---
 
@@ -17,6 +17,11 @@ A modern full-stack personal finance web application built to streamline everyda
 
 ## ✨ Key Features
 
+- **🎨 "Quiet Ledger" Design System & Dark Mode**:
+  - **Calm, Elegant Aesthetic**: Inspired by classic accounting ledgers and paper slips. Uses warm off-white parchment tones (`#FAF8F4`), deep forest green (`#1F4D3A`), and champagne gold accents (`#B08D57`) without loud neon gradients.
+  - **Signature Receipt Detail**: Subtle perforated dashed borders (`receipt-border`) applied to the summary KPI card and OCR slip confirmation review.
+  - **Bilingual Typography**: **Noto Sans Thai** for crisp UI reading paired with **Fraunces** serif for page headers and financial totals, utilizing `tabular-nums` for right-aligned figures.
+  - **🌙 Zero-FOUC Dark Mode**: Fully supported dark theme utilizing deep greenish-black tones (`#101512`), system preference detection, instant toggle (☀️ / 🌙), and zero flicker on page refresh via `useSyncExternalStore`.
 - **📸 Bank Transfer Slip OCR (Privacy-First)**:
   - Powered by Tesseract OCR 5 with Thai (`tha`) and English (`eng`) language models.
   - Image preprocessing with Pillow (grayscale conversion, upscaling, contrast enhancement).
@@ -29,8 +34,8 @@ A modern full-stack personal finance web application built to streamline everyda
   - Remembers user preferences: when you assign a category to a merchant, future transactions from that same merchant are auto-categorized automatically.
 - **📊 Interactive Monthly Dashboard (Recharts)**:
   - 4 Key KPI metrics: Total Spending, Month-over-Month Delta (%), Transaction Count, and Daily Average.
-  - Visual category breakdown donut chart with percentage distribution.
-  - Daily spending bar chart showing daily spending trends.
+  - Visual category breakdown donut chart with center total display and warm forest-gold palette.
+  - Daily spending bar chart showing daily spending trends with minimal gridlines.
   - 12-month navigation selector.
   - Real-time cache synchronization with TanStack Query.
 - **📥 CSV Data Export**:
@@ -46,7 +51,7 @@ A modern full-stack personal finance web application built to streamline everyda
 
 | Layer                 | Technologies                                                                                                                                                                                       |
 | :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Frontend**    | **Next.js 16** (App Router), **TypeScript**, **Tailwind CSS**, **TanStack Query v5**, **React Hook Form**, **Zod**, **Recharts**, **Lucide Icons** |
+| **Frontend**    | **Next.js 16** (App Router), **TypeScript**, **Tailwind CSS v4**, **TanStack Query v5**, **React Hook Form**, **Zod**, **Recharts**, **Lucide Icons**, **Noto Sans Thai & Fraunces** |
 | **Backend**     | **FastAPI**, **SQLAlchemy 2**, **Pydantic v2**, **PyJWT**, **bcrypt**, **Tesseract OCR (pytesseract + Pillow)**                                                |
 | **Database**    | **PostgreSQL 16** (Neon Hosted Database) · SQLite in-memory for testing                                                                                                                     |
 | **DevOps & CI** | **Docker**, **GitHub Actions** (Automated SQLite & PostgreSQL CI matrix), **Render**, **Vercel**                                                                           |
@@ -154,3 +159,4 @@ npm run build
 - [X] **Phase C (Cloud Deployment)**: Render (Backend Docker Web Service) + Vercel (Frontend Next.js) + Neon (Serverless PostgreSQL 16).
 - [X] **Phase D (Bank Slip OCR)**: In-memory Tesseract OCR engine, Thai transfer slip parsers, `POST /slips/parse`, and `/upload` UI with 1-click sample slip demo.
 - [X] **Phase E (Dashboard & Extras)**: Monthly interactive Recharts analytics (Donut & Bar charts), real-time query invalidation, and UTF-8 BOM CSV Export.
+- [X] **Phase F (Quiet Ledger Redesign & Dark Mode)**: Minimalist financial ledger design system, custom typography (Noto Sans Thai + Fraunces), signature receipt details, and zero-FOUC Dark Mode toggle.
