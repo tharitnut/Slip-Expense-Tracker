@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, ChangeEvent, DragEvent } from "react";
+import { useState, useRef, useEffect, ChangeEvent, DragEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -173,6 +173,35 @@ export default function UploadSlipPage() {
     }
   };
 
+  // Support pasting image directly from clipboard (e.g. Ctrl + V)
+  useEffect(() => {
+    if (parsedData || isSaved) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return;
+      }
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          const file = items[i].getAsFile();
+          if (file) {
+            e.preventDefault();
+            handleProcessFile(file);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [parsedData, isSaved]);
+
   const handleLoadSampleSlip = async () => {
     setErrorMessage(null);
     try {
@@ -275,6 +304,13 @@ export default function UploadSlipPage() {
               <p className="text-xs text-ql-muted mt-1 max-w-sm mx-auto">
                 Supports KBank, SCB, PromptPay, and other Thai bank slips (JPEG, PNG, WebP up to 5MB)
               </p>
+              <div className="mt-2.5 flex items-center justify-center gap-1.5 text-[11px] text-ql-muted">
+                <span>or press</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-ql-surface border border-ql-border font-mono text-[10px] text-ql-text shadow-xs">Ctrl</kbd>
+                <span>+</span>
+                <kbd className="px-1.5 py-0.5 rounded bg-ql-surface border border-ql-border font-mono text-[10px] text-ql-text shadow-xs">V</kbd>
+                <span>to paste from clipboard</span>
+              </div>
             </div>
             <input
               ref={fileInputRef}
