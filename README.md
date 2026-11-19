@@ -58,6 +58,30 @@ A modern full-stack personal finance web application built to streamline everyda
 
 ---
 
+## 📂 Project Structure
+
+```text
+slip-expense-tracker/
+├── backend/
+│   ├── app/
+│   │   ├── routers/       # Endpoints (auth, categories, transactions, summary, slips)
+│   │   ├── ocr.py         # In-memory Tesseract OCR & Thai slip regex parsers
+│   │   ├── models.py      # SQLAlchemy 2 ORM models (strictly scoped by user_id)
+│   │   └── schemas.py     # Pydantic v2 request & response validation contracts
+│   └── tests/             # 51 automated tests (SQLite in-memory)
+│
+├── frontend/
+│   └── src/
+│       ├── app/           # Next.js App Router ((app) shell & (auth) pages)
+│       ├── components/ui/ # Quiet Ledger design system (Card, Button, Table, Modal...)
+│       ├── context/       # Auth & Theme (Dark Mode) state providers
+│       └── lib/api.ts     # Typed API client & CSV stream downloader
+│
+└── docker-compose.yml     # Local full-stack development orchestration
+```
+
+---
+
 ## 📡 API Overview
 
 | Method                         | Path                     | Description                                                                                 |
