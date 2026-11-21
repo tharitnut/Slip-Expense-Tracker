@@ -15,6 +15,30 @@ A modern full-stack personal finance web application built to streamline everyda
 
 ---
 
+## 📸 Visual Showcase
+
+### Monthly Analytics & Budget Tracking
+| Light Mode | Dark Mode |
+| :---: | :---: |
+| ![Dashboard Light](docs/screenshots/dashboard-light.png) | ![Dashboard Dark](docs/screenshots/dashboard-dark.png) |
+
+### Slip OCR Processing & Review
+| Slip Upload Dropzone (`Ctrl + V`) | Extracted Receipt Confirmation |
+| :---: | :---: |
+| ![Scan Slip](docs/screenshots/scan-slip.png) | ![Extracted Slip](docs/screenshots/slip.png) |
+
+### Financial Ledger & Categories
+| Expense Transactions Table | Category Management |
+| :---: | :---: |
+| ![Transactions](docs/screenshots/transactions.png) | ![Categories](docs/screenshots/categories.png) |
+
+### Instant Access & Authentication
+| 1-Click Demo Account Login | Account Registration |
+| :---: | :---: |
+| ![Sign In](docs/screenshots/sign-in.png) | ![Sign Up](docs/screenshots/sign-up.png) |
+
+---
+
 ## ✨ Key Features
 
 - **⚡ Instant 1-Click Demo Account**:
@@ -194,3 +218,4 @@ npm run build
 - [X] **Phase D (Bank Slip OCR)**: In-memory Tesseract OCR engine, Thai transfer slip parsers, `POST /slips/parse`, and `/upload` UI with 1-click sample slip demo.
 - [X] **Phase E (Dashboard & Extras)**: Monthly interactive Recharts analytics (Donut & Bar charts), real-time query invalidation, and UTF-8 BOM CSV Export.
 - [X] **Phase F (Quiet Ledger Redesign & Dark Mode)**: Minimalist financial ledger design system, custom typography (Noto Sans Thai + Fraunces), signature receipt details, and zero-FOUC Dark Mode toggle.
+- [X] **Phase G (Portfolio & UX Polish)**: 1-Click Demo account with realistic seed transactions, Monthly Budget Target with color-coded progress pacing bar, Clipboard Paste (`Ctrl + V`) on Slip Upload, Quiet Ledger Toast notification system, and visual screenshot showcase gallery.
