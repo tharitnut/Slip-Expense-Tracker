@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect, ChangeEvent, DragEvent } from "react";
+import { useState, useRef, useEffect, useCallback, ChangeEvent, DragEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { Category, ParsedSlip } from "@/types";
 import { Card, Button, Badge } from "@/components/ui";
+import { useToast } from "@/context/ToastContext";
 import {
   UploadCloud,
   FileText,
@@ -51,6 +52,7 @@ function formatCurrency(amount: number): string {
 
 export default function UploadSlipPage() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Categories
@@ -100,7 +102,7 @@ export default function UploadSlipPage() {
     }
   };
 
-  const handleProcessFile = async (file: File) => {
+  const handleProcessFile = useCallback(async (file: File) => {
     setErrorMessage(null);
     setSubmitError(null);
 
@@ -136,6 +138,7 @@ export default function UploadSlipPage() {
       setSlipRef(result.slip_ref || "");
       setNote("");
       setCategoryId("");
+      toast.info("Slip parsed successfully. Please review and confirm.");
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorMessage(err.message);
@@ -145,7 +148,7 @@ export default function UploadSlipPage() {
     } finally {
       setIsScanning(false);
     }
-  };
+  }, [toast]);
 
   const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -200,7 +203,7 @@ export default function UploadSlipPage() {
 
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, [parsedData, isSaved]);
+  }, [parsedData, isSaved, handleProcessFile]);
 
   const handleLoadSampleSlip = async () => {
     setErrorMessage(null);
@@ -252,6 +255,7 @@ export default function UploadSlipPage() {
       queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
 
       setIsSaved(true);
+      toast.success("Expense recorded from slip");
     } catch (err) {
       if (err instanceof ApiError) {
         setSubmitError(err.message);

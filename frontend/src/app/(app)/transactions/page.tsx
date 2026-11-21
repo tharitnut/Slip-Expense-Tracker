@@ -9,6 +9,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { TransactionModal } from "@/components/TransactionModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { Card, Button, Badge } from "@/components/ui";
+import { useToast } from "@/context/ToastContext";
 import {
   Plus,
   ScanLine,
@@ -67,6 +68,7 @@ function getRecentMonths(count = 12): { value: string; label: string }[] {
 
 export default function TransactionsPage() {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   // Filters & Pagination State
   const [page, setPage] = useState(0);
@@ -164,8 +166,9 @@ export default function TransactionsPage() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
       setDeletingTransaction(null);
+      toast.success("Expense deleted");
     } catch {
-      // error handled
+      toast.error("Failed to delete expense");
     } finally {
       setIsDeleting(false);
     }
@@ -175,8 +178,9 @@ export default function TransactionsPage() {
     setIsExporting(true);
     try {
       await api.downloadCsv(selectedMonth || undefined);
+      toast.success("Transactions exported as CSV");
     } catch {
-      // export handled
+      toast.error("Failed to export CSV");
     } finally {
       setIsExporting(false);
     }
@@ -569,6 +573,7 @@ export default function TransactionsPage() {
           queryClient.invalidateQueries({ queryKey: ["transactions"] });
           queryClient.invalidateQueries({ queryKey: ["categories"] });
           queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
+          toast.success(editingTransaction ? "Expense updated" : "Expense added");
         }}
       />
 

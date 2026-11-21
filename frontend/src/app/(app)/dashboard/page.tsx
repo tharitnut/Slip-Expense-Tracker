@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { MonthlySummary } from "@/types";
 import { Card, Button } from "@/components/ui";
+import { useToast } from "@/context/ToastContext";
 import {
   ResponsiveContainer,
   PieChart,
@@ -99,6 +100,7 @@ function formatDayLabel(dateStr: string): string {
 }
 
 export default function DashboardPage() {
+  const toast = useToast();
   const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonth());
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -135,11 +137,14 @@ export default function DashboardPage() {
     setExportError(null);
     try {
       await api.downloadCsv(selectedMonth);
+      toast.success(`Exported ${selectedMonth} transactions as CSV`);
     } catch (err) {
       if (err instanceof ApiError) {
         setExportError(err.message);
+        toast.error(err.message);
       } else {
         setExportError("Failed to export CSV. Please try again.");
+        toast.error("Failed to export CSV");
       }
     } finally {
       setIsExporting(false);
@@ -413,7 +418,7 @@ export default function DashboardPage() {
                 )}
 
                 {/* Categories List */}
-                <div className="mt-4 space-y-2 max-h-56 overflow-y-auto pr-1 divide-y divide-ql-border/40">
+                <div className="mt-4 space-y-2 divide-y divide-ql-border/40">
                   {summary.by_category.map((cat, idx) => {
                     const color = CHART_COLORS[idx % CHART_COLORS.length];
                     return (

@@ -7,6 +7,7 @@ import { Category } from "@/types";
 import { CategoryModal } from "@/components/CategoryModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { Card, Button } from "@/components/ui";
+import { useToast } from "@/context/ToastContext";
 import {
   Plus,
   Tag,
@@ -21,6 +22,7 @@ import {
 
 export default function CategoriesPage() {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   // Search filter
   const [search, setSearch] = useState("");
@@ -66,8 +68,9 @@ export default function CategoriesPage() {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
       setDeletingCategory(null);
+      toast.success("Category deleted");
     } catch {
-      // error handled in toast / modal
+      toast.error("Failed to delete category");
     } finally {
       setIsDeleting(false);
     }
@@ -231,6 +234,7 @@ export default function CategoriesPage() {
           queryClient.invalidateQueries({ queryKey: ["categories"] });
           queryClient.invalidateQueries({ queryKey: ["transactions"] });
           queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
+          toast.success(editingCategory ? "Category renamed" : "Category created");
         }}
       />
 
