@@ -396,7 +396,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div>
-                <p className="text-2xl font-serif font-semibold text-ql-text/80 tracking-tight tabular-nums">
+                <p className="text-2xl font-serif font-semibold text-ql-text tracking-tight tabular-nums">
                   {formatCurrency(summary.previous_month_total)}
                 </p>
                 <p className="text-xs text-ql-muted mt-2">
@@ -584,6 +584,7 @@ export default function DashboardPage() {
                           width={45}
                         />
                         <RechartsTooltip
+                          cursor={{ fill: "var(--ql-primary-light)", opacity: 0.65, rx: 6, ry: 6 }}
                           formatter={(val: unknown) => [formatCurrency(Number(val) || 0), "Spent"]}
                           labelFormatter={(label) => `Date: ${formatDayLabel(String(label))}`}
                           contentStyle={{
@@ -597,7 +598,7 @@ export default function DashboardPage() {
                         />
                         <Bar
                           dataKey="total"
-                          fill="#1F4D3A"
+                          fill="var(--ql-primary, #1F4D3A)"
                           radius={[4, 4, 0, 0]}
                           maxBarSize={36}
                         />
