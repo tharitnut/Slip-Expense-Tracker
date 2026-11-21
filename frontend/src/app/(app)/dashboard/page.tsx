@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo, useSyncExternalStore } from "react";
+import { useState, useMemo, useCallback, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { MonthlySummary } from "@/types";
-import { Card, Button } from "@/components/ui";
+import { Card, Button, Modal } from "@/components/ui";
 import { useToast } from "@/context/ToastContext";
 import {
   ResponsiveContainer,
@@ -34,6 +34,8 @@ import {
   BarChart3,
   Loader2,
   AlertCircle,
+  Target,
+  Pencil,
 } from "lucide-react";
 
 const CHART_COLORS = [
@@ -99,9 +101,45 @@ function formatDayLabel(dateStr: string): string {
   return dateStr;
 }
 
+function useMonthlyBudget(selectedMonth: string) {
+  const subscribe = useCallback((callback: () => void) => {
+    window.addEventListener("storage", callback);
+    return () => window.removeEventListener("storage", callback);
+  }, []);
+
+  const getSnapshot = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(`budget_${selectedMonth}`);
+  }, [selectedMonth]);
+
+  const rawValue = useSyncExternalStore(subscribe, getSnapshot, () => null);
+  const budget = rawValue ? Number(rawValue) : null;
+
+  const setMonthlyBudget = useCallback(
+    (amount: number | null) => {
+      try {
+        if (amount === null || isNaN(amount) || amount <= 0) {
+          localStorage.removeItem(`budget_${selectedMonth}`);
+        } else {
+          localStorage.setItem(`budget_${selectedMonth}`, String(amount));
+        }
+        window.dispatchEvent(new Event("storage"));
+      } catch {
+        // ignore storage error
+      }
+    },
+    [selectedMonth]
+  );
+
+  return { budget: budget && budget > 0 ? budget : null, setMonthlyBudget };
+}
+
 export default function DashboardPage() {
   const toast = useToast();
   const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonth());
+  const { budget, setMonthlyBudget } = useMonthlyBudget(selectedMonth);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [budgetInput, setBudgetInput] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const isMounted = useSyncExternalStore(
@@ -285,6 +323,65 @@ export default function DashboardPage() {
                   )}
                   <span className="text-ql-muted/80">vs last month</span>
                 </div>
+
+                {/* Monthly Budget Progress Indicator */}
+                {budget !== null ? (
+                  (() => {
+                    const percentSpent = (summary.total / budget) * 100;
+                    const isOver = summary.total > budget;
+                    const remaining = budget - summary.total;
+                    return (
+                      <div className="pt-2.5 mt-2.5 border-t border-ql-border/50 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <div className="flex items-center gap-1">
+                            <span className="text-ql-muted">Budget:</span>
+                            <span className="font-semibold text-ql-text tabular-nums">
+                              {formatCurrency(budget)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBudgetInput(String(budget));
+                                setIsBudgetModalOpen(true);
+                              }}
+                              title="Edit target budget"
+                              className="p-0.5 text-ql-muted hover:text-ql-primary transition-colors cursor-pointer"
+                            >
+                              <Pencil className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                          <span className={isOver ? "text-ql-error font-semibold tabular-nums" : "text-ql-muted tabular-nums"}>
+                            {isOver
+                              ? `+${formatCurrency(summary.total - budget)} over`
+                              : `${formatCurrency(remaining)} left (${Math.round(percentSpent)}%)`}
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-ql-bg rounded-full overflow-hidden border border-ql-border/40">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              isOver ? "bg-ql-error" : percentSpent > 80 ? "bg-ql-accent" : "bg-ql-primary"
+                            }`}
+                            style={{ width: `${Math.min(percentSpent, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div className="pt-2.5 mt-2.5 border-t border-ql-border/50">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBudgetInput("");
+                        setIsBudgetModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-ql-primary hover:underline cursor-pointer"
+                    >
+                      <Target className="w-3 h-3" />
+                      <span>Set Monthly Target</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -542,6 +639,81 @@ export default function DashboardPage() {
           )}
         </div>
       ) : null}
+      {/* Set Monthly Budget Modal */}
+      <Modal
+        open={isBudgetModalOpen}
+        onClose={() => setIsBudgetModalOpen(false)}
+        title={`Set Target Budget (${selectedMonthLabel})`}
+        maxWidth="max-w-sm"
+      >
+        <form
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            const num = parseFloat(budgetInput);
+            if (!isNaN(num) && num > 0) {
+              setMonthlyBudget(num);
+              toast.success(`Target budget set to ${formatCurrency(num)}`);
+            } else {
+              setMonthlyBudget(null);
+              toast.info("Budget target cleared");
+            }
+            setIsBudgetModalOpen(false);
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+              Monthly Spending Limit (THB)
+            </label>
+            <input
+              type="number"
+              step="1000"
+              min="0"
+              placeholder="e.g. 15000"
+              value={budgetInput}
+              onChange={(e) => setBudgetInput(e.target.value)}
+              autoFocus
+              className="w-full px-3.5 py-2.5 rounded-xl border border-ql-border bg-ql-surface text-ql-text text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ql-primary/30 focus:border-ql-primary transition"
+            />
+            <p className="text-[11px] text-ql-muted mt-1.5">
+              Set a spending ceiling for this month to monitor your spending allowance.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between pt-3 border-t border-ql-border/60">
+            {budget !== null ? (
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
+                onClick={() => {
+                  setMonthlyBudget(null);
+                  toast.info("Budget target cleared");
+                  setIsBudgetModalOpen(false);
+                }}
+              >
+                Clear
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsBudgetModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Save Target
+              </Button>
+            </div>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
