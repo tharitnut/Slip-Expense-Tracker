@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { Wallet, Loader2 } from "lucide-react";
+import { Wallet, Loader2, Sparkles } from "lucide-react";
 import { Card, Button } from "@/components/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -23,6 +23,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
 
   const {
     register,
@@ -53,6 +54,100 @@ export default function LoginPage() {
       } else {
         setErrorMessage("Connection error. Please try again.");
       }
+    }
+  };
+
+  const seedDemoData = async () => {
+    try {
+      const txRes = await api.get<{ total: number }>("/transactions?limit=1");
+      if (txRes.total === 0) {
+        const catsRes = await api.get<{ id: number; name: string }[]>("/categories");
+        const catMap = new Map(catsRes.map((c) => [c.name, c.id]));
+
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const todayDay = now.getDate();
+
+        // Realistic seed transactions with safe past/present dates
+        const seedItems = [
+          { dayOffset: 0, time: "08:30:00", amount: 85.0, merchant: "Café Amazon", cat: "Food", note: "Iced Americano", source: "slip" as const, ref: "DEMO-SLIP-01" },
+          { dayOffset: 1, time: "09:15:00", amount: 62.0, merchant: "BTS Skytrain", cat: "Transportation", note: "Rabbit card top-up", source: "manual" as const },
+          { dayOffset: 2, time: "18:40:00", amount: 480.0, merchant: "Tops Market", cat: "Shopping", note: "Groceries & fresh fruits", source: "slip" as const, ref: "DEMO-SLIP-02" },
+          { dayOffset: 3, time: "12:15:00", amount: 135.0, merchant: "Somtam Jay So", cat: "Food", note: "Team lunch", source: "manual" as const },
+          { dayOffset: 4, time: "14:20:00", amount: 890.0, merchant: "MEA Electricity", cat: "Bills & Utilities", note: "Monthly utilities", source: "slip" as const, ref: "DEMO-SLIP-03" },
+          { dayOffset: 5, time: "20:00:00", amount: 280.0, merchant: "Major Cineplex", cat: "Entertainment", note: "Weekend movie", source: "manual" as const },
+          { dayOffset: 6, time: "11:30:00", amount: 245.0, merchant: "Boots Pharmacy", cat: "Health", note: "Vitamins & personal care", source: "slip" as const, ref: "DEMO-SLIP-04" },
+        ];
+
+        for (const item of seedItems) {
+          const targetDay = Math.max(1, todayDay - item.dayOffset);
+          const dayStr = String(targetDay).padStart(2, "0");
+
+          await api.post("/transactions", {
+            amount: item.amount,
+            occurred_at: `${y}-${m}-${dayStr}T${item.time}`,
+            merchant: item.merchant,
+            category_id: catMap.get(item.cat) ?? null,
+            note: item.note,
+            source: item.source,
+            slip_ref: item.ref ?? null,
+          });
+        }
+
+        // Set realistic budget target for the month
+        const budgetKey = `budget_${y}-${m}`;
+        if (!localStorage.getItem(budgetKey)) {
+          localStorage.setItem(budgetKey, "8000");
+          window.dispatchEvent(new Event("storage"));
+        }
+      }
+    } catch {
+      // Non-critical background seed
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setIsDemoLoading(true);
+    setErrorMessage(null);
+    const demoEmail = "demo@example.com";
+    const demoPassword = "demouser123";
+
+    try {
+      const doLogin = async () => {
+        const body = new URLSearchParams();
+        body.append("username", demoEmail);
+        body.append("password", demoPassword);
+        return await api.post<{ access_token: string }>("/auth/login", body);
+      };
+
+      let res: { access_token: string };
+      try {
+        res = await doLogin();
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          // If demo account doesn't exist yet, auto-register
+          await api.post("/auth/register", {
+            email: demoEmail,
+            password: demoPassword,
+          });
+          res = await doLogin();
+        } else {
+          throw err;
+        }
+      }
+
+      await login(res.access_token);
+      await seedDemoData();
+      router.push("/dashboard");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setErrorMessage(err.message || "Failed to log in with demo account.");
+      } else {
+        setErrorMessage("Connection error. Please try again.");
+      }
+    } finally {
+      setIsDemoLoading(false);
     }
   };
 
@@ -115,7 +210,7 @@ export default function LoginPage() {
             type="submit"
             variant="primary"
             size="lg"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isDemoLoading}
             className="w-full mt-2"
           >
             {isSubmitting ? (
@@ -128,6 +223,38 @@ export default function LoginPage() {
             )}
           </Button>
         </form>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-ql-border" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-ql-surface px-2.5 text-ql-muted tracking-wider">
+              Or test drive
+            </span>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          disabled={isSubmitting || isDemoLoading}
+          onClick={handleDemoLogin}
+          className="w-full flex items-center justify-center gap-2 border-ql-border text-ql-text hover:bg-ql-primary-light"
+        >
+          {isDemoLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Preparing Demo Account...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 mr-1 text-ql-accent" />
+              <span>Explore Demo Account</span>
+            </>
+          )}
+        </Button>
 
         <div className="mt-8 text-center text-xs text-ql-muted">
           Don&apos;t have an account?{" "}

@@ -17,6 +17,16 @@ A modern full-stack personal finance web application built to streamline everyda
 
 ## ✨ Key Features
 
+- **⚡ Instant 1-Click Demo Account**:
+  - Test drive the full application directly from `/login` with a single click — no signup or email verification needed.
+  - Automatically provisions sample transactions (coffee, transit, groceries, utilities) and a monthly budget target for immediate live exploration.
+- **🎯 Monthly Budget Target & Allowance Tracking**:
+  - Set a monthly spending goal per calendar month with instant visual progress pacing.
+  - Dynamic color-coded status bar: calm forest green under 80%, champagne gold at 80–100%, and soft brick red with alert badge when over budget.
+- **📋 Clipboard Slip Paste (`Ctrl + V`)**:
+  - Effortlessly paste Thai bank transfer slip images directly from clipboard onto the `/upload` dropzone (supports LINE, web screenshots, and mobile apps).
+- **🔔 Quiet Ledger Toast Notification System**:
+  - Lightweight, non-intrusive toast feedback styled to match the paper-like Quiet Ledger palette for create, edit, delete, and export actions.
 - **🎨 "Quiet Ledger" Design System & Dark Mode**:
   - **Calm, Elegant Aesthetic**: Inspired by classic accounting ledgers and paper slips. Uses warm off-white parchment tones (`#FAF8F4`), deep forest green (`#1F4D3A`), and champagne gold accents (`#B08D57`) without loud neon gradients.
   - **Signature Receipt Detail**: Subtle perforated dashed borders (`receipt-border`) applied to the summary KPI card and OCR slip confirmation review.
