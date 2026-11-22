@@ -4,8 +4,8 @@ import { useState, useMemo, useCallback, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
-import { MonthlySummary } from "@/types";
-import { Card, Button, Modal } from "@/components/ui";
+import { MonthlySummary, TransactionPage } from "@/types";
+import { Card, Button, Modal, Badge } from "@/components/ui";
 import { useToast } from "@/context/ToastContext";
 import {
   ResponsiveContainer,
@@ -36,6 +36,11 @@ import {
   AlertCircle,
   Target,
   Pencil,
+  Sparkles,
+  Flame,
+  Store,
+  ShieldCheck,
+  Compass,
 } from "lucide-react";
 
 const CHART_COLORS = [
@@ -198,6 +203,104 @@ export default function DashboardPage() {
   }, [recentMonths, selectedMonth]);
 
   const hasData = summary && summary.total > 0;
+
+  const { start, end } = useMemo(() => {
+    if (!selectedMonth) return { start: undefined, end: undefined };
+    const [yearStr, monthStr] = selectedMonth.split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+
+    const startDate = `${selectedMonth}-01T00:00:00`;
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01T00:00:00`;
+
+    return { start: startDate, end: endDate };
+  }, [selectedMonth]);
+
+  const { data: monthTxData } = useQuery<TransactionPage>({
+    queryKey: ["month-transactions", selectedMonth],
+    queryFn: () =>
+      api.get<TransactionPage>("/transactions", {
+        start,
+        end,
+        limit: 200,
+      }),
+    enabled: !!summary && summary.transaction_count > 0,
+  });
+
+  // Computed Insights
+  const peakDay = useMemo(() => {
+    if (!summary?.daily || summary.daily.length === 0) return null;
+    const sorted = [...summary.daily].sort((a, b) => b.total - a.total);
+    const top = sorted[0];
+    if (!top || top.total <= 0) return null;
+
+    const dayTxs = monthTxData?.items?.filter((tx) => tx.occurred_at.startsWith(top.date));
+    const topTx = dayTxs && dayTxs.length > 0 ? [...dayTxs].sort((a, b) => Number(b.amount) - Number(a.amount))[0] : null;
+
+    return {
+      date: top.date,
+      total: top.total,
+      merchant: topTx?.merchant || null,
+    };
+  }, [summary, monthTxData]);
+
+  const topMerchant = useMemo(() => {
+    if (!monthTxData?.items || monthTxData.items.length === 0) return null;
+    const map = new Map<string, { total: number; count: number }>();
+    for (const tx of monthTxData.items) {
+      if (!tx.merchant) continue;
+      const key = tx.merchant.trim();
+      if (!key) continue;
+      const existing = map.get(key) || { total: 0, count: 0 };
+      map.set(key, {
+        total: existing.total + Number(tx.amount),
+        count: existing.count + 1,
+      });
+    }
+    if (map.size === 0) return null;
+    let best = { name: "", total: 0, count: 0 };
+    for (const [name, stats] of map.entries()) {
+      if (stats.total > best.total) {
+        best = { name, total: stats.total, count: stats.count };
+      }
+    }
+    return best.total > 0 ? best : null;
+  }, [monthTxData]);
+
+  const slipStats = useMemo(() => {
+    if (!monthTxData?.items || monthTxData.items.length === 0) return null;
+    const total = monthTxData.items.length;
+    const slipCount = monthTxData.items.filter((tx) => tx.source === "slip").length;
+    const percent = Math.round((slipCount / total) * 100);
+    return { slipCount, total, percent };
+  }, [monthTxData]);
+
+  const pacingForecast = useMemo(() => {
+    if (!summary || summary.total <= 0) return null;
+    const [yearStr, monthStr] = selectedMonth.split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const totalDays = new Date(year, month, 0).getDate();
+
+    const now = new Date();
+    const isCurrentMonth =
+      now.getFullYear() === year && now.getMonth() + 1 === month;
+    const currentDay = isCurrentMonth ? Math.min(now.getDate(), totalDays) : totalDays;
+
+    const activeDays = summary.daily.length || 1;
+    const dailyAvg = summary.total / activeDays;
+    const projected = isCurrentMonth
+      ? Math.round((summary.total / Math.max(1, currentDay)) * totalDays)
+      : summary.total;
+
+    return {
+      projected,
+      dailyAvg,
+      isCurrentMonth,
+    };
+  }, [summary, selectedMonth]);
 
   return (
     <div className="space-y-6">
@@ -440,7 +543,7 @@ export default function DashboardPage() {
                   {formatCurrency(
                     summary.daily.length > 0
                       ? summary.total / summary.daily.length
-                      : 0
+                        : 0
                   )}
                 </p>
                 <p className="text-xs text-ql-muted mt-2">
@@ -449,6 +552,119 @@ export default function DashboardPage() {
               </div>
             </Card>
           </div>
+
+          {/* Smart Spending Insights Card */}
+          {hasData && (
+            <Card className="p-5 bg-ql-surface border border-ql-border/80 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-ql-border/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-ql-accent-light text-ql-accent flex items-center justify-center">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-ql-text">Monthly Insights</h2>
+                    <p className="text-[11px] text-ql-muted">Automated spend analysis for {selectedMonthLabel}</p>
+                  </div>
+                </div>
+                <Badge variant="default">
+                  {summary.transaction_count} entries analyzed
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* 1. Peak Spend Day */}
+                <div className="p-3.5 rounded-xl bg-ql-bg/80 border border-ql-border/50 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-ql-muted uppercase tracking-wider">
+                      Peak Spend Day
+                    </span>
+                    <div className="w-6 h-6 rounded-md bg-ql-error-light text-ql-error flex items-center justify-center">
+                      <Flame className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                  <p className="text-lg font-serif font-bold text-ql-text tabular-nums">
+                    {peakDay ? formatCurrency(peakDay.total) : "—"}
+                  </p>
+                  <p className="text-[11px] text-ql-muted truncate">
+                    {peakDay ? (
+                      <>
+                        {formatDayLabel(peakDay.date)}
+                        {peakDay.merchant ? ` · ${peakDay.merchant}` : ""}
+                      </>
+                    ) : (
+                      "No spend recorded"
+                    )}
+                  </p>
+                </div>
+
+                {/* 2. Top Merchant */}
+                <div className="p-3.5 rounded-xl bg-ql-bg/80 border border-ql-border/50 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-ql-muted uppercase tracking-wider">
+                      Top Merchant
+                    </span>
+                    <div className="w-6 h-6 rounded-md bg-ql-primary-light text-ql-primary flex items-center justify-center">
+                      <Store className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                  <p className="text-lg font-serif font-bold text-ql-text truncate">
+                    {topMerchant ? topMerchant.name : "Various"}
+                  </p>
+                  <p className="text-[11px] text-ql-muted truncate">
+                    {topMerchant
+                      ? `${formatCurrency(topMerchant.total)} (${topMerchant.count} ${
+                          topMerchant.count === 1 ? "entry" : "entries"
+                        })`
+                      : "No merchant recorded"}
+                  </p>
+                </div>
+
+                {/* 3. Slip Verification Ratio */}
+                <div className="p-3.5 rounded-xl bg-ql-bg/80 border border-ql-border/50 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-ql-muted uppercase tracking-wider">
+                      Slip Verification
+                    </span>
+                    <div className="w-6 h-6 rounded-md bg-ql-success-light text-ql-success flex items-center justify-center">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                  <p className="text-lg font-serif font-bold text-ql-text tabular-nums">
+                    {slipStats ? `${slipStats.percent}% via Slip` : "—"}
+                  </p>
+                  <p className="text-[11px] text-ql-muted truncate">
+                    {slipStats
+                      ? `${slipStats.slipCount} of ${slipStats.total} OCR-verified`
+                      : "Manual entries only"}
+                  </p>
+                </div>
+
+                {/* 4. Month Projection */}
+                <div className="p-3.5 rounded-xl bg-ql-bg/80 border border-ql-border/50 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-ql-muted uppercase tracking-wider">
+                      Month Projection
+                    </span>
+                    <div className="w-6 h-6 rounded-md bg-ql-accent-light text-ql-accent flex items-center justify-center">
+                      <Compass className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                  <p className="text-lg font-serif font-bold text-ql-text tabular-nums">
+                    {pacingForecast ? formatCurrency(pacingForecast.projected) : "—"}
+                  </p>
+                  <p className="text-[11px] text-ql-muted truncate">
+                    {budget && pacingForecast
+                      ? pacingForecast.projected <= budget
+                        ? `~${formatCurrency(budget - pacingForecast.projected)} under budget`
+                        : `~${formatCurrency(pacingForecast.projected - budget)} over budget`
+                      : pacingForecast?.isCurrentMonth
+                      ? "Paced from daily avg"
+                      : "Final month total"}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* Charts Section */}
           {hasData ? (
@@ -559,7 +775,7 @@ export default function DashboardPage() {
                 </div>
 
                 {isMounted && (
-                  <div className="h-80 w-full">
+                  <div className="flex-1 min-h-[320px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={summary.daily}
