@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
 import {
   Wallet,
   ReceiptText,
@@ -14,18 +16,73 @@ import {
   LogOut,
   Loader2,
   User as UserIcon,
+  Keyboard,
 } from "lucide-react";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { user, token, isLoading, logout } = useAuth();
+  const { toggleTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && (!user || !token)) {
       router.push("/login");
     }
   }, [isLoading, user, token, router]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in form inputs
+      const activeEl = document.activeElement;
+      const isTyping =
+        activeEl instanceof HTMLInputElement ||
+        activeEl instanceof HTMLTextAreaElement ||
+        activeEl instanceof HTMLSelectElement ||
+        (activeEl && activeEl.getAttribute("contenteditable") === "true");
+
+      if (isTyping) return;
+
+      // Ignore modifier keys
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const key = e.key.toLowerCase();
+
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        setIsShortcutsOpen((prev) => !prev);
+        return;
+      }
+
+      if (key === "d") {
+        e.preventDefault();
+        router.push("/dashboard");
+      } else if (key === "t") {
+        e.preventDefault();
+        router.push("/transactions");
+      } else if (key === "u") {
+        e.preventDefault();
+        router.push("/upload");
+      } else if (key === "c") {
+        e.preventDefault();
+        router.push("/categories");
+      } else if (key === "m") {
+        e.preventDefault();
+        toggleTheme();
+      } else if (key === "n") {
+        e.preventDefault();
+        if (pathname === "/transactions") {
+          window.dispatchEvent(new CustomEvent("open-new-transaction"));
+        } else {
+          router.push("/transactions?action=new");
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [router, pathname, toggleTheme]);
 
   const navItems = [
     { label: "Transactions", href: "/transactions", icon: ReceiptText },
@@ -72,7 +129,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            {/* Keyboard shortcuts trigger */}
+            <button
+              type="button"
+              onClick={() => setIsShortcutsOpen(true)}
+              title="Keyboard shortcuts (?)"
+              aria-label="Keyboard shortcuts"
+              className="hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-lg text-ql-muted hover:text-ql-text hover:bg-ql-bg/80 border border-ql-border/60 transition-colors cursor-pointer"
+            >
+              <Keyboard className="w-3.5 h-3.5" />
+              <span className="text-[11px] font-mono font-semibold">?</span>
+            </button>
+
             <ThemeToggle />
 
             {user ? (
@@ -128,6 +197,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           );
         })}
       </nav>
+
+      {/* Global Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        open={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
     </div>
   );
 }

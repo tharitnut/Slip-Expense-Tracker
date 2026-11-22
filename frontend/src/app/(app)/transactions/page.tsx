@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -83,6 +83,29 @@ export default function TransactionsPage() {
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    // Check if opened via URL param ?action=new
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("action") === "new") {
+        queueMicrotask(() => {
+          setEditingTransaction(null);
+          setIsModalOpen(true);
+        });
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+
+    // Listen to global shortcut event
+    const handleOpenNew = () => {
+      setEditingTransaction(null);
+      setIsModalOpen(true);
+    };
+
+    window.addEventListener("open-new-transaction", handleOpenNew);
+    return () => window.removeEventListener("open-new-transaction", handleOpenNew);
+  }, []);
 
   // Calculate start & end date for the selected month filter
   const { start, end } = useMemo(() => {
