@@ -43,6 +43,9 @@ export default function LoginPage() {
 
       const res = await api.post<{ access_token: string }>("/auth/login", body);
       await login(res.access_token);
+      if (data.email.trim().toLowerCase() === "demo@example.com") {
+        await seedDemoData();
+      }
       router.push("/transactions");
     } catch (err) {
       if (err instanceof ApiError) {
@@ -59,27 +62,43 @@ export default function LoginPage() {
 
   const seedDemoData = async () => {
     try {
-      const txRes = await api.get<{ total: number }>("/transactions?limit=1");
+      const txRes = await api.get<{
+        items: { merchant: string | null; category_id: number | null }[];
+        total: number;
+      }>("/transactions?limit=100");
+
+      const catsRes = await api.get<{ id: number; name: string }[]>("/categories");
+      const catMap = new Map(catsRes.map((c) => [c.name, c.id]));
+
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const todayDay = now.getDate();
+
+      interface SeedItem {
+        dayOffset: number;
+        time: string;
+        amount: number;
+        merchant: string;
+        cat: string | null;
+        note: string;
+        source: "manual" | "slip";
+        ref?: string;
+      }
+
+      // Realistic seed transactions with safe past/present dates
+      const seedItems: SeedItem[] = [
+        { dayOffset: 0, time: "08:30:00", amount: 85.0, merchant: "Café Amazon", cat: "Food", note: "Iced Americano", source: "slip", ref: "DEMO-SLIP-01" },
+        { dayOffset: 1, time: "09:15:00", amount: 62.0, merchant: "BTS Skytrain", cat: "Transportation", note: "Rabbit card top-up", source: "manual" },
+        { dayOffset: 1, time: "19:45:00", amount: 150.0, merchant: "Somchai K. (PromptPay)", cat: null, note: "Dinner transfer with friend", source: "slip", ref: "DEMO-SLIP-05" },
+        { dayOffset: 2, time: "18:40:00", amount: 480.0, merchant: "Tops Market", cat: "Shopping", note: "Groceries & fresh fruits", source: "slip", ref: "DEMO-SLIP-02" },
+        { dayOffset: 3, time: "12:15:00", amount: 135.0, merchant: "Somtam Jay So", cat: "Food", note: "Team lunch", source: "manual" },
+        { dayOffset: 4, time: "14:20:00", amount: 890.0, merchant: "MEA Electricity", cat: "Bills & Utilities", note: "Monthly utilities", source: "slip", ref: "DEMO-SLIP-03" },
+        { dayOffset: 5, time: "20:00:00", amount: 280.0, merchant: "Major Cineplex", cat: "Entertainment", note: "Weekend movie", source: "manual" },
+        { dayOffset: 6, time: "11:30:00", amount: 245.0, merchant: "Boots Pharmacy", cat: "Health", note: "Vitamins & personal care", source: "slip", ref: "DEMO-SLIP-04" },
+      ];
+
       if (txRes.total === 0) {
-        const catsRes = await api.get<{ id: number; name: string }[]>("/categories");
-        const catMap = new Map(catsRes.map((c) => [c.name, c.id]));
-
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth() + 1).padStart(2, "0");
-        const todayDay = now.getDate();
-
-        // Realistic seed transactions with safe past/present dates
-        const seedItems = [
-          { dayOffset: 0, time: "08:30:00", amount: 85.0, merchant: "Café Amazon", cat: "Food", note: "Iced Americano", source: "slip" as const, ref: "DEMO-SLIP-01" },
-          { dayOffset: 1, time: "09:15:00", amount: 62.0, merchant: "BTS Skytrain", cat: "Transportation", note: "Rabbit card top-up", source: "manual" as const },
-          { dayOffset: 2, time: "18:40:00", amount: 480.0, merchant: "Tops Market", cat: "Shopping", note: "Groceries & fresh fruits", source: "slip" as const, ref: "DEMO-SLIP-02" },
-          { dayOffset: 3, time: "12:15:00", amount: 135.0, merchant: "Somtam Jay So", cat: "Food", note: "Team lunch", source: "manual" as const },
-          { dayOffset: 4, time: "14:20:00", amount: 890.0, merchant: "MEA Electricity", cat: "Bills & Utilities", note: "Monthly utilities", source: "slip" as const, ref: "DEMO-SLIP-03" },
-          { dayOffset: 5, time: "20:00:00", amount: 280.0, merchant: "Major Cineplex", cat: "Entertainment", note: "Weekend movie", source: "manual" as const },
-          { dayOffset: 6, time: "11:30:00", amount: 245.0, merchant: "Boots Pharmacy", cat: "Health", note: "Vitamins & personal care", source: "slip" as const, ref: "DEMO-SLIP-04" },
-        ];
-
         for (const item of seedItems) {
           const targetDay = Math.max(1, todayDay - item.dayOffset);
           const dayStr = String(targetDay).padStart(2, "0");
@@ -88,19 +107,41 @@ export default function LoginPage() {
             amount: item.amount,
             occurred_at: `${y}-${m}-${dayStr}T${item.time}`,
             merchant: item.merchant,
-            category_id: catMap.get(item.cat) ?? null,
+            category_id: item.cat ? (catMap.get(item.cat) ?? null) : null,
             note: item.note,
             source: item.source,
             slip_ref: item.ref ?? null,
           });
         }
-
-        // Set realistic budget target for the month
-        const budgetKey = `budget_${y}-${m}`;
-        if (!localStorage.getItem(budgetKey)) {
-          localStorage.setItem(budgetKey, "8000");
-          window.dispatchEvent(new Event("storage"));
+      } else {
+        // Ensure any missing seed items (e.g. Uncategorized item) are backfilled
+        const existingMerchants = new Set(txRes.items.map((t) => t.merchant));
+        for (const item of seedItems) {
+          if (!existingMerchants.has(item.merchant)) {
+            const targetDay = Math.max(1, todayDay - item.dayOffset);
+            const dayStr = String(targetDay).padStart(2, "0");
+            try {
+              await api.post("/transactions", {
+                amount: item.amount,
+                occurred_at: `${y}-${m}-${dayStr}T${item.time}`,
+                merchant: item.merchant,
+                category_id: item.cat ? (catMap.get(item.cat) ?? null) : null,
+                note: item.note,
+                source: item.source,
+                slip_ref: item.ref ?? null,
+              });
+            } catch {
+              // Ignore duplicates or network errors
+            }
+          }
         }
+      }
+
+      // Set realistic budget target for the month
+      const budgetKey = `budget_${y}-${m}`;
+      if (!localStorage.getItem(budgetKey)) {
+        localStorage.setItem(budgetKey, "8000");
+        window.dispatchEvent(new Event("storage"));
       }
     } catch {
       // Non-critical background seed

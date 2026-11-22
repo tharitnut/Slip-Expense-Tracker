@@ -41,6 +41,13 @@ A modern full-stack personal finance web application built to streamline everyda
 
 ## ✨ Key Features
 
+- **⌨️ Power-User Keyboard Shortcuts**:
+  - Full keyboard navigation and actions for high-velocity workflows: `?` (Cheatsheet modal), `D` (Dashboard), `T` (Transactions), `U` (Scan Slip), `C` (Categories), `N` (Add Expense), and `M` (Dark/Light toggle).
+  - Built-in typing guard automatically suppresses shortcuts when typing in search and form inputs.
+- **💡 Automated Spending Intelligence**:
+  - Smart Monthly Insights deck analyzing peak spending days, top merchants, bank slip verification ratio, and month-end spending pacing vs. budget.
+- **🏷️ Instant Quick Filter Chips**:
+  - 1-click ledger filtering for All records, OCR Bank Slips (`source === 'slip'`), Manual entries, High-value expenses (`> ฿500`), and Uncategorized items with live count badges.
 - **⚡ Instant 1-Click Demo Account**:
   - Test drive the full application directly from `/login` with a single click — no signup or email verification needed.
   - Automatically provisions sample transactions (coffee, transit, groceries, utilities) and a monthly budget target for immediate live exploration.
@@ -219,3 +226,4 @@ npm run build
 - [X] **Phase E (Dashboard & Extras)**: Monthly interactive Recharts analytics (Donut & Bar charts), real-time query invalidation, and UTF-8 BOM CSV Export.
 - [X] **Phase F (Quiet Ledger Redesign & Dark Mode)**: Minimalist financial ledger design system, custom typography (Noto Sans Thai + Fraunces), signature receipt details, and zero-FOUC Dark Mode toggle.
 - [X] **Phase G (Portfolio & UX Polish)**: 1-Click Demo account with realistic seed transactions, Monthly Budget Target with color-coded progress pacing bar, Clipboard Paste (`Ctrl + V`) on Slip Upload, Quiet Ledger Toast notification system, and visual screenshot showcase gallery.
+- [X] **Phase H (Power-User & Intelligent UX)**: Global keyboard shortcuts (`?`, `D`, `T`, `U`, `C`, `N`, `M`), automated Smart Spending Insights deck on Dashboard, and instant Quick Filter Chips on Transactions.

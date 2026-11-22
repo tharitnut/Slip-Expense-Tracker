@@ -10,6 +10,7 @@ import { TransactionModal } from "@/components/TransactionModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { Card, Button, Badge } from "@/components/ui";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   Plus,
   ScanLine,
@@ -27,6 +28,7 @@ import {
   RefreshCw,
   X,
   Loader2,
+  SlidersHorizontal,
 } from "lucide-react";
 
 const PAGE_SIZE = 20;
@@ -69,12 +71,16 @@ function getRecentMonths(count = 12): { value: string; label: string }[] {
 export default function TransactionsPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const { user } = useAuth();
+
+  type FilterChipId = "all" | "slip" | "manual" | "high" | "uncategorized";
 
   // Filters & Pagination State
   const [page, setPage] = useState(0);
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeChip, setActiveChip] = useState<FilterChipId>("all");
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Modals state
@@ -166,9 +172,58 @@ export default function TransactionsPage() {
 
   const recentMonths = useMemo(() => getRecentMonths(12), []);
 
+  useEffect(() => {
+    // If demo account is active and lacks any uncategorized sample, backfill Somchai K. automatically
+    if (user?.email === "demo@example.com" && txData && txData.items.length > 0) {
+      const hasUncat = txData.items.some(
+        (t) => t.category_id === null || t.merchant === "Somchai K. (PromptPay)"
+      );
+      if (!hasUncat) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const dayStr = String(Math.max(1, now.getDate() - 1)).padStart(2, "0");
+
+        api
+          .post("/transactions", {
+            amount: 150.0,
+            occurred_at: `${y}-${m}-${dayStr}T19:45:00`,
+            merchant: "Somchai K. (PromptPay)",
+            category_id: null,
+            note: "Dinner transfer with friend",
+            source: "slip",
+            slip_ref: "DEMO-SLIP-05",
+          })
+          .then(() => {
+            queryClient.invalidateQueries({ queryKey: ["transactions"] });
+            queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
+          })
+          .catch(() => {});
+      }
+    }
+  }, [user?.email, txData, queryClient]);
+
   const total = txData?.total || 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const transactions = txData?.items || [];
+  const rawTransactions = useMemo(() => txData?.items || [], [txData]);
+
+  const chipCounts = useMemo(() => {
+    return {
+      all: rawTransactions.length,
+      slip: rawTransactions.filter((t) => t.source === "slip").length,
+      manual: rawTransactions.filter((t) => t.source === "manual").length,
+      high: rawTransactions.filter((t) => Number(t.amount) >= 500).length,
+      uncategorized: rawTransactions.filter((t) => t.category_id === null).length,
+    };
+  }, [rawTransactions]);
+
+  const transactions = useMemo(() => {
+    if (activeChip === "slip") return rawTransactions.filter((t) => t.source === "slip");
+    if (activeChip === "manual") return rawTransactions.filter((t) => t.source === "manual");
+    if (activeChip === "high") return rawTransactions.filter((t) => Number(t.amount) >= 500);
+    if (activeChip === "uncategorized") return rawTransactions.filter((t) => t.category_id === null);
+    return rawTransactions;
+  }, [rawTransactions, activeChip]);
 
   const handleOpenAddModal = () => {
     setEditingTransaction(null);
@@ -213,10 +268,13 @@ export default function TransactionsPage() {
     setSelectedMonth("");
     setSelectedCategoryId("");
     setSearchQuery("");
+    setActiveChip("all");
     setPage(0);
   };
 
-  const hasActiveFilters = Boolean(selectedMonth || selectedCategoryId || searchQuery);
+  const hasActiveFilters = Boolean(
+    selectedMonth || selectedCategoryId || searchQuery || activeChip !== "all"
+  );
 
   return (
     <div className="space-y-6">
@@ -336,6 +394,116 @@ export default function TransactionsPage() {
               ))}
             </select>
           </div>
+        </div>
+
+        {/* Quick Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-ql-border/40">
+          <span className="text-xs font-medium text-ql-muted mr-0.5 flex items-center gap-1">
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Filter:</span>
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setActiveChip("all")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+              activeChip === "all"
+                ? "bg-ql-primary text-white shadow-xs"
+                : "bg-ql-surface text-ql-muted border border-ql-border hover:bg-ql-primary-light hover:text-ql-text"
+            }`}
+          >
+            <span>All</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                activeChip === "all" ? "bg-white/20 text-white" : "bg-ql-bg text-ql-muted"
+              }`}
+            >
+              {chipCounts.all}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveChip("slip")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+              activeChip === "slip"
+                ? "bg-ql-primary text-white shadow-xs"
+                : "bg-ql-surface text-ql-muted border border-ql-border hover:bg-ql-primary-light hover:text-ql-text"
+            }`}
+          >
+            <ScanLine className="w-3 h-3 text-ql-accent" />
+            <span>Bank Slips</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                activeChip === "slip" ? "bg-white/20 text-white" : "bg-ql-bg text-ql-muted"
+              }`}
+            >
+              {chipCounts.slip}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveChip("manual")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+              activeChip === "manual"
+                ? "bg-ql-primary text-white shadow-xs"
+                : "bg-ql-surface text-ql-muted border border-ql-border hover:bg-ql-primary-light hover:text-ql-text"
+            }`}
+          >
+            <Pencil className="w-3 h-3 text-ql-muted" />
+            <span>Manual</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                activeChip === "manual" ? "bg-white/20 text-white" : "bg-ql-bg text-ql-muted"
+              }`}
+            >
+              {chipCounts.manual}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveChip("high")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+              activeChip === "high"
+                ? "bg-ql-primary text-white shadow-xs"
+                : "bg-ql-surface text-ql-muted border border-ql-border hover:bg-ql-primary-light hover:text-ql-text"
+            }`}
+          >
+            <span>&gt; ฿500</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                activeChip === "high" ? "bg-white/20 text-white" : "bg-ql-bg text-ql-muted"
+              }`}
+            >
+              {chipCounts.high}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveChip("uncategorized")}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+              activeChip === "uncategorized"
+                ? "bg-ql-primary text-white shadow-xs"
+                : "bg-ql-surface text-ql-muted border border-ql-border hover:bg-ql-primary-light hover:text-ql-text"
+            }`}
+          >
+            <AlertCircle className="w-3 h-3 text-ql-error" />
+            <span>Uncategorized</span>
+            {chipCounts.uncategorized > 0 && (
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  activeChip === "uncategorized"
+                    ? "bg-white/20 text-white"
+                    : "bg-ql-error-light text-ql-error"
+                }`}
+              >
+                {chipCounts.uncategorized}
+              </span>
+            )}
+          </button>
         </div>
 
         {hasActiveFilters && (
