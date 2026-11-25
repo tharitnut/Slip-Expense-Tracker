@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { MonthlySummary, TransactionPage } from "@/types";
-import { Card, Button, Modal, Badge } from "@/components/ui";
+import { Card, Button, Modal } from "@/components/ui";
 import { useToast } from "@/context/ToastContext";
 import {
   ResponsiveContainer,
@@ -20,11 +20,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
-  Wallet,
   TrendingUp,
   TrendingDown,
-  Calendar,
-  Receipt,
   Download,
   ScanLine,
   Plus,
@@ -36,11 +33,6 @@ import {
   AlertCircle,
   Target,
   Pencil,
-  Sparkles,
-  Flame,
-  Store,
-  ShieldCheck,
-  Compass,
 } from "lucide-react";
 
 const CHART_COLORS = [
@@ -305,13 +297,10 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-ql-border/60">
-        <div>
-          <h1 className="text-2xl font-serif font-semibold text-ql-text tracking-tight">Monthly Dashboard</h1>
-          <p className="text-ql-muted text-sm mt-0.5">
-            Spending insights, category breakdown, and monthly trends
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-ql-border/70">
+        <h1 className="text-2xl sm:text-[26px] font-serif font-semibold text-ql-text tracking-tight">
+          {selectedMonthLabel}
+        </h1>
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
@@ -390,280 +379,218 @@ export default function DashboardPage() {
         </Card>
       ) : summary ? (
         <div className="space-y-6">
-          {/* KPI Cards Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1: Total Spending (Dashed Receipt Signature Border) */}
-            <Card variant="receipt" className="p-5 space-y-3 bg-ql-surface/80 relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ql-muted uppercase tracking-wider">
-                  Total Spending
-                </span>
-                <div className="w-8 h-8 rounded-lg bg-ql-primary-light text-ql-primary flex items-center justify-center">
-                  <Wallet className="w-4 h-4" />
-                </div>
-              </div>
-              <div>
-                <p className="text-3xl font-serif font-bold text-ql-text tracking-tight tabular-nums">
-                  {formatCurrency(summary.total)}
-                </p>
-                <div className="mt-2 flex items-center gap-1.5 text-xs">
+          {/* Primary Ledger Overview: Asymmetric 5 + 7 layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            {/* Hero Total Card (Dashed Receipt Signature Border) */}
+            <Card variant="receipt" className="lg:col-span-5 p-5 sm:p-6 bg-ql-surface/90 flex flex-col justify-between gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-ql-muted">Total spent</span>
                   {summary.change_percent !== null ? (
                     summary.change_percent > 0 ? (
-                      <span className="inline-flex items-center font-medium text-ql-error bg-ql-error-light px-2 py-0.5 rounded-full">
-                        <TrendingUp className="w-3 h-3 mr-0.5" />
-                        +{summary.change_percent.toFixed(1)}%
+                      <span className="inline-flex items-center text-xs font-medium text-ql-error">
+                        <TrendingUp className="w-3.5 h-3.5 mr-1" />
+                        +{summary.change_percent.toFixed(1)}% vs prev
                       </span>
                     ) : summary.change_percent < 0 ? (
-                      <span className="inline-flex items-center font-medium text-ql-success bg-ql-success-light px-2 py-0.5 rounded-full">
-                        <TrendingDown className="w-3 h-3 mr-0.5" />
-                        {summary.change_percent.toFixed(1)}%
+                      <span className="inline-flex items-center text-xs font-medium text-ql-success">
+                        <TrendingDown className="w-3.5 h-3.5 mr-1" />
+                        {summary.change_percent.toFixed(1)}% vs prev
                       </span>
                     ) : (
-                      <span className="text-ql-muted bg-ql-bg px-2 py-0.5 rounded-full">0.0%</span>
+                      <span className="text-xs text-ql-muted">Unchanged vs prev</span>
                     )
                   ) : (
-                    <span className="text-ql-muted">No prior month</span>
+                    <span className="text-xs text-ql-muted">First active month</span>
                   )}
-                  <span className="text-ql-muted/80">vs last month</span>
                 </div>
 
-                {/* Monthly Budget Progress Indicator */}
-                {budget !== null ? (
-                  (() => {
-                    const percentSpent = (summary.total / budget) * 100;
-                    const isOver = summary.total > budget;
-                    const remaining = budget - summary.total;
-                    return (
-                      <div className="pt-2.5 mt-2.5 border-t border-ql-border/50 space-y-1.5">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <div className="flex items-center gap-1">
-                            <span className="text-ql-muted">Budget:</span>
-                            <span className="font-semibold text-ql-text tabular-nums">
-                              {formatCurrency(budget)}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setBudgetInput(String(budget));
-                                setIsBudgetModalOpen(true);
-                              }}
-                              title="Edit target budget"
-                              className="p-0.5 text-ql-muted hover:text-ql-primary transition-colors cursor-pointer"
-                            >
-                              <Pencil className="w-2.5 h-2.5" />
-                            </button>
-                          </div>
-                          <span className={isOver ? "text-ql-error font-semibold tabular-nums" : "text-ql-muted tabular-nums"}>
-                            {isOver
-                              ? `+${formatCurrency(summary.total - budget)} over`
-                              : `${formatCurrency(remaining)} left (${Math.round(percentSpent)}%)`}
+                <p className="text-3xl sm:text-4xl font-serif font-bold text-ql-text tracking-tight tabular-nums">
+                  {formatCurrency(summary.total)}
+                </p>
+              </div>
+
+              {/* Monthly Budget Progress Indicator */}
+              {budget !== null ? (
+                (() => {
+                  const percentSpent = (summary.total / budget) * 100;
+                  const isOver = summary.total > budget;
+                  const remaining = budget - summary.total;
+                  return (
+                    <div className="pt-3 border-t border-ql-border/50 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-ql-muted">Budget</span>
+                          <span className="font-medium text-ql-text tabular-nums">
+                            {formatCurrency(budget)}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBudgetInput(String(budget));
+                              setIsBudgetModalOpen(true);
+                            }}
+                            title="Edit target budget"
+                            className="p-0.5 text-ql-muted hover:text-ql-primary transition-colors cursor-pointer"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
                         </div>
-                        <div className="w-full h-1.5 bg-ql-bg rounded-full overflow-hidden border border-ql-border/40">
-                          <div
-                            className={`h-full rounded-full transition-all duration-300 ${
-                              isOver ? "bg-ql-error" : percentSpent > 80 ? "bg-ql-accent" : "bg-ql-primary"
-                            }`}
-                            style={{ width: `${Math.min(percentSpent, 100)}%` }}
-                          />
-                        </div>
+                        <span className={isOver ? "text-ql-error font-medium tabular-nums" : "text-ql-muted tabular-nums"}>
+                          {isOver
+                            ? `+${formatCurrency(summary.total - budget)} over`
+                            : `${formatCurrency(remaining)} left (${Math.round(percentSpent)}%)`}
+                        </span>
                       </div>
-                    );
-                  })()
-                ) : (
-                  <div className="pt-2.5 mt-2.5 border-t border-ql-border/50">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBudgetInput("");
-                        setIsBudgetModalOpen(true);
-                      }}
-                      className="inline-flex items-center gap-1 text-[11px] font-medium text-ql-primary hover:underline cursor-pointer"
-                    >
-                      <Target className="w-3 h-3" />
-                      <span>Set Monthly Target</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+                      <div className="w-full h-1.5 bg-ql-bg rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            isOver ? "bg-ql-error" : percentSpent > 80 ? "bg-ql-accent" : "bg-ql-primary"
+                          }`}
+                          style={{ width: `${Math.min(percentSpent, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="pt-3 border-t border-ql-border/50 flex items-center justify-between">
+                  <span className="text-xs text-ql-muted">No monthly ceiling set</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBudgetInput("");
+                      setIsBudgetModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-ql-primary hover:underline cursor-pointer"
+                  >
+                    <Target className="w-3.5 h-3.5" />
+                    <span>Set budget</span>
+                  </button>
+                </div>
+              )}
             </Card>
 
-            {/* Card 2: Previous Month Total */}
-            <Card className="p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ql-muted uppercase tracking-wider">
-                  Previous Month
-                </span>
-                <div className="w-8 h-8 rounded-lg bg-ql-bg text-ql-muted flex items-center justify-center border border-ql-border">
-                  <Calendar className="w-4 h-4" />
+            {/* Secondary Ledger Metrics — Unified 3-column strip with vertical dividers */}
+            <Card padding="none" className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-ql-border/60">
+              <div className="p-5 sm:p-6 flex flex-col justify-between gap-3">
+                <span className="text-xs text-ql-muted">Previous month</span>
+                <div>
+                  <p className="text-2xl font-serif font-semibold text-ql-text tracking-tight tabular-nums">
+                    {formatCurrency(summary.previous_month_total)}
+                  </p>
+                  <p className="text-xs text-ql-muted mt-1">Prior period total</p>
                 </div>
               </div>
-              <div>
-                <p className="text-2xl font-serif font-semibold text-ql-text tracking-tight tabular-nums">
-                  {formatCurrency(summary.previous_month_total)}
-                </p>
-                <p className="text-xs text-ql-muted mt-2">
-                  Baseline for {selectedMonthLabel}
-                </p>
-              </div>
-            </Card>
 
-            {/* Card 3: Transactions Count */}
-            <Card className="p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ql-muted uppercase tracking-wider">
-                  Entries
-                </span>
-                <div className="w-8 h-8 rounded-lg bg-ql-accent-light text-ql-accent flex items-center justify-center">
-                  <Receipt className="w-4 h-4" />
+              <div className="p-5 sm:p-6 flex flex-col justify-between gap-3">
+                <span className="text-xs text-ql-muted">Recorded entries</span>
+                <div>
+                  <p className="text-2xl font-serif font-semibold text-ql-text tracking-tight tabular-nums">
+                    {summary.transaction_count}
+                  </p>
+                  <p className="text-xs text-ql-muted mt-1">
+                    {slipStats
+                      ? `${slipStats.slipCount} slip · ${slipStats.total - slipStats.slipCount} manual`
+                      : `In ${selectedMonthLabel}`}
+                  </p>
                 </div>
               </div>
-              <div>
-                <p className="text-2xl font-serif font-semibold text-ql-text tracking-tight tabular-nums">
-                  {summary.transaction_count}
-                </p>
-                <p className="text-xs text-ql-muted mt-2">
-                  Recorded in {selectedMonthLabel}
-                </p>
-              </div>
-            </Card>
 
-            {/* Card 4: Daily Average */}
-            <Card className="p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ql-muted uppercase tracking-wider">
-                  Daily Average
-                </span>
-                <div className="w-8 h-8 rounded-lg bg-ql-success-light text-ql-success flex items-center justify-center">
-                  <BarChart3 className="w-4 h-4" />
-                </div>
-              </div>
-              <div>
-                <p className="text-2xl font-serif font-semibold text-ql-text tracking-tight tabular-nums">
-                  {formatCurrency(
-                    summary.daily.length > 0
-                      ? summary.total / summary.daily.length
+              <div className="p-5 sm:p-6 flex flex-col justify-between gap-3">
+                <span className="text-xs text-ql-muted">Daily average</span>
+                <div>
+                  <p className="text-2xl font-serif font-semibold text-ql-text tracking-tight tabular-nums">
+                    {formatCurrency(
+                      summary.daily.length > 0
+                        ? summary.total / summary.daily.length
                         : 0
-                  )}
-                </p>
-                <p className="text-xs text-ql-muted mt-2">
-                  Across active spending days
-                </p>
+                    )}
+                  </p>
+                  <p className="text-xs text-ql-muted mt-1">
+                    Across {summary.daily.length} active {summary.daily.length === 1 ? "day" : "days"}
+                  </p>
+                </div>
               </div>
             </Card>
           </div>
 
-          {/* Smart Spending Insights Card */}
+          {/* Ledger Highlights Strip (replaces generic 4-box Insights card) */}
           {hasData && (
-            <Card className="p-5 bg-ql-surface border border-ql-border/80 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-ql-border/50">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-ql-accent-light text-ql-accent flex items-center justify-center">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-ql-text">Monthly Insights</h2>
-                    <p className="text-[11px] text-ql-muted">Automated spend analysis for {selectedMonthLabel}</p>
-                  </div>
-                </div>
-                <Badge variant="default">
-                  {summary.transaction_count} entries analyzed
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Peak Spend Day */}
-                <div className="p-3.5 rounded-xl bg-ql-bg/80 border border-ql-border/50 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-medium text-ql-muted uppercase tracking-wider">
-                      Peak Spend Day
+            <div className="rounded-2xl border border-ql-border/80 bg-ql-surface/70 px-5 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-4 gap-x-6 divide-y sm:divide-y-0 lg:divide-x divide-ql-border/50">
+                <div className="pt-2 sm:pt-0">
+                  <span className="text-xs text-ql-muted">Peak day</span>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <span className="text-base font-serif font-semibold text-ql-text tabular-nums">
+                      {peakDay ? formatCurrency(peakDay.total) : "—"}
                     </span>
-                    <div className="w-6 h-6 rounded-md bg-ql-error-light text-ql-error flex items-center justify-center">
-                      <Flame className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                  <p className="text-lg font-serif font-bold text-ql-text tabular-nums">
-                    {peakDay ? formatCurrency(peakDay.total) : "—"}
-                  </p>
-                  <p className="text-[11px] text-ql-muted truncate">
-                    {peakDay ? (
-                      <>
-                        {formatDayLabel(peakDay.date)}
-                        {peakDay.merchant ? ` · ${peakDay.merchant}` : ""}
-                      </>
-                    ) : (
-                      "No spend recorded"
+                    {peakDay && (
+                      <span className="text-xs text-ql-muted truncate">
+                        on {formatDayLabel(peakDay.date)}
+                      </span>
                     )}
-                  </p>
+                  </div>
+                  {peakDay?.merchant && (
+                    <p className="text-[11px] text-ql-muted truncate mt-0.5">
+                      Mostly {peakDay.merchant}
+                    </p>
+                  )}
                 </div>
 
-                {/* 2. Top Merchant */}
-                <div className="p-3.5 rounded-xl bg-ql-bg/80 border border-ql-border/50 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-medium text-ql-muted uppercase tracking-wider">
-                      Top Merchant
-                    </span>
-                    <div className="w-6 h-6 rounded-md bg-ql-primary-light text-ql-primary flex items-center justify-center">
-                      <Store className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                  <p className="text-lg font-serif font-bold text-ql-text truncate">
+                <div className="pt-3 sm:pt-0 lg:pl-6">
+                  <span className="text-xs text-ql-muted">Top payee</span>
+                  <p className="mt-1 text-base font-serif font-semibold text-ql-text truncate">
                     {topMerchant ? topMerchant.name : "Various"}
                   </p>
-                  <p className="text-[11px] text-ql-muted truncate">
+                  <p className="text-[11px] text-ql-muted tabular-nums mt-0.5">
                     {topMerchant
-                      ? `${formatCurrency(topMerchant.total)} (${topMerchant.count} ${
+                      ? `${formatCurrency(topMerchant.total)} · ${topMerchant.count} ${
                           topMerchant.count === 1 ? "entry" : "entries"
-                        })`
-                      : "No merchant recorded"}
+                        }`
+                      : "No payee recorded"}
                   </p>
                 </div>
 
-                {/* 3. Slip Verification Ratio */}
-                <div className="p-3.5 rounded-xl bg-ql-bg/80 border border-ql-border/50 space-y-1.5">
+                <div className="pt-3 sm:pt-0 lg:pl-6">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-medium text-ql-muted uppercase tracking-wider">
-                      Slip Verification
+                    <span className="text-xs text-ql-muted">Slip coverage</span>
+                    <span className="text-xs font-medium text-ql-text tabular-nums">
+                      {slipStats ? `${slipStats.percent}%` : "—"}
                     </span>
-                    <div className="w-6 h-6 rounded-md bg-ql-success-light text-ql-success flex items-center justify-center">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                    </div>
                   </div>
-                  <p className="text-lg font-serif font-bold text-ql-text tabular-nums">
-                    {slipStats ? `${slipStats.percent}% via Slip` : "—"}
-                  </p>
-                  <p className="text-[11px] text-ql-muted truncate">
+                  <div className="mt-2 w-full h-1.5 bg-ql-bg rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-ql-accent rounded-full transition-all duration-300"
+                      style={{ width: `${slipStats ? slipStats.percent : 0}%` }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-ql-muted mt-1.5">
                     {slipStats
-                      ? `${slipStats.slipCount} of ${slipStats.total} OCR-verified`
+                      ? `${slipStats.slipCount} of ${slipStats.total} verified by bank slip`
                       : "Manual entries only"}
                   </p>
                 </div>
 
-                {/* 4. Month Projection */}
-                <div className="p-3.5 rounded-xl bg-ql-bg/80 border border-ql-border/50 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-medium text-ql-muted uppercase tracking-wider">
-                      Month Projection
-                    </span>
-                    <div className="w-6 h-6 rounded-md bg-ql-accent-light text-ql-accent flex items-center justify-center">
-                      <Compass className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                  <p className="text-lg font-serif font-bold text-ql-text tabular-nums">
+                <div className="pt-3 sm:pt-0 lg:pl-6">
+                  <span className="text-xs text-ql-muted">
+                    {pacingForecast?.isCurrentMonth ? "Projected month-end" : "Month close"}
+                  </span>
+                  <p className="mt-1 text-base font-serif font-semibold text-ql-text tabular-nums">
                     {pacingForecast ? formatCurrency(pacingForecast.projected) : "—"}
                   </p>
-                  <p className="text-[11px] text-ql-muted truncate">
+                  <p className="text-[11px] text-ql-muted tabular-nums mt-0.5">
                     {budget && pacingForecast
                       ? pacingForecast.projected <= budget
-                        ? `~${formatCurrency(budget - pacingForecast.projected)} under budget`
-                        : `~${formatCurrency(pacingForecast.projected - budget)} over budget`
+                        ? `${formatCurrency(budget - pacingForecast.projected)} within budget`
+                        : `${formatCurrency(pacingForecast.projected - budget)} over budget`
                       : pacingForecast?.isCurrentMonth
-                      ? "Paced from daily avg"
-                      : "Final month total"}
+                      ? "At current daily pace"
+                      : "Final recorded spend"}
                   </p>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Charts Section */}
@@ -705,17 +632,24 @@ export default function DashboardPage() {
                           ))}
                         </Pie>
                         <RechartsTooltip
-                          formatter={(value: unknown) => [
+                          formatter={(value: unknown, name: unknown) => [
                             formatCurrency(Number(value) || 0),
-                            "Total",
+                            String(name || "Total"),
                           ]}
                           contentStyle={{
                             backgroundColor: "var(--ql-surface, #ffffff)",
                             borderRadius: "10px",
                             border: "1px solid var(--ql-border, #E8E4DC)",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
                             fontSize: "12px",
                             color: "var(--ql-text, #1C2420)",
+                          }}
+                          itemStyle={{
+                            color: "var(--ql-text, #1C2420)",
+                            fontWeight: 600,
+                          }}
+                          labelStyle={{
+                            color: "var(--ql-muted, #6B746E)",
                           }}
                         />
                       </PieChart>
@@ -730,31 +664,51 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {/* Categories List */}
-                <div className="mt-4 space-y-2 divide-y divide-ql-border/40">
+                {/* Categories List with visual proportion bars */}
+                <div className="mt-4 space-y-3">
                   {summary.by_category.map((cat, idx) => {
                     const color = CHART_COLORS[idx % CHART_COLORS.length];
+                    const isTop = idx === 0;
                     return (
                       <div
                         key={cat.category_id || cat.category_name}
-                        className="flex items-center justify-between text-xs pt-2 first:pt-0"
+                        className="space-y-1.5"
                       >
-                        <div className="flex items-center gap-2 truncate max-w-[180px]">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: color }}
-                          />
-                          <span className="font-medium text-ql-text/90 truncate">
-                            {cat.category_name}
-                          </span>
+                        <div className="flex items-baseline justify-between text-xs gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: color }}
+                            />
+                            <span
+                              className={`truncate ${
+                                isTop ? "font-semibold text-ql-text" : "font-medium text-ql-text/85"
+                              }`}
+                            >
+                              {cat.category_name}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-2.5 shrink-0">
+                            <span
+                              className={`tabular-nums ${
+                                isTop ? "font-semibold text-ql-text" : "font-medium text-ql-text/90"
+                              }`}
+                            >
+                              {formatCurrency(cat.total)}
+                            </span>
+                            <span className="text-[11px] text-ql-muted w-10 text-right tabular-nums">
+                              {cat.percent.toFixed(1)}%
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-medium text-ql-text tabular-nums">
-                            {formatCurrency(cat.total)}
-                          </span>
-                          <span className="text-ql-muted w-11 text-right tabular-nums">
-                            {cat.percent.toFixed(1)}%
-                          </span>
+                        <div className="w-full h-1 bg-ql-bg rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{
+                              width: `${Math.max(cat.percent, 2)}%`,
+                              backgroundColor: color,
+                            }}
+                          />
                         </div>
                       </div>
                     );
@@ -802,14 +756,22 @@ export default function DashboardPage() {
                         <RechartsTooltip
                           cursor={{ fill: "var(--ql-primary-light)", opacity: 0.65, rx: 6, ry: 6 }}
                           formatter={(val: unknown) => [formatCurrency(Number(val) || 0), "Spent"]}
-                          labelFormatter={(label) => `Date: ${formatDayLabel(String(label))}`}
+                          labelFormatter={(label) => `${formatDayLabel(String(label))}`}
                           contentStyle={{
                             backgroundColor: "var(--ql-surface, #ffffff)",
                             borderRadius: "10px",
                             border: "1px solid var(--ql-border, #E8E4DC)",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
                             fontSize: "12px",
                             color: "var(--ql-text, #1C2420)",
+                          }}
+                          itemStyle={{
+                            color: "var(--ql-text, #1C2420)",
+                            fontWeight: 600,
+                          }}
+                          labelStyle={{
+                            color: "var(--ql-muted, #6B746E)",
+                            marginBottom: "2px",
                           }}
                         />
                         <Bar
@@ -825,24 +787,24 @@ export default function DashboardPage() {
               </Card>
             </div>
           ) : (
-            /* Empty State for Month */
-            <Card className="p-12 text-center space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-ql-primary-light text-ql-primary flex items-center justify-center mx-auto">
-                <Receipt className="w-7 h-7" />
-              </div>
-              <div className="max-w-md mx-auto">
+            /* Empty State for Month — Receipt Ledger style */
+            <div className="receipt-border rounded-2xl bg-ql-surface/60 px-6 py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-xs font-mono uppercase tracking-[0.12em] text-ql-muted">
+                  No entries · {selectedMonthLabel}
+                </p>
                 <h3 className="text-base font-serif font-semibold text-ql-text">
-                  No Spending Recorded in {selectedMonthLabel}
+                  Nothing recorded for this month yet
                 </h3>
-                <p className="text-xs text-ql-muted mt-1">
-                  Start adding expenses or scan a Thai bank slip to populate your dashboard charts.
+                <p className="text-xs text-ql-muted">
+                  Scan a Thai bank transfer slip or add an expense manually to see your breakdown.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                 <Link href="/upload">
                   <Button variant="primary" size="sm">
                     <ScanLine className="w-4 h-4" />
-                    <span>Scan Bank Slip</span>
+                    <span>Scan Slip</span>
                   </Button>
                 </Link>
                 <Link href="/transactions">
@@ -852,7 +814,7 @@ export default function DashboardPage() {
                   </Button>
                 </Link>
               </div>
-            </Card>
+            </div>
           )}
         </div>
       ) : null}

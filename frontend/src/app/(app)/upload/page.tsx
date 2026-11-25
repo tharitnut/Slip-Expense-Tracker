@@ -270,16 +270,13 @@ export default function UploadSlipPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-ql-border/60">
-        <div>
-          <h1 className="text-2xl font-serif font-semibold text-ql-text tracking-tight">Scan Transfer Slip</h1>
-          <p className="text-ql-muted text-sm mt-0.5">
-            Extract payee, date, amount, and reference code automatically from Thai slips
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs font-medium text-ql-primary bg-ql-primary-light border border-ql-primary/20 px-3 py-1.5 rounded-full w-fit">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>In-memory OCR • Never persisted</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-ql-border/70">
+        <h1 className="text-2xl sm:text-[26px] font-serif font-semibold text-ql-text tracking-tight">
+          Scan Transfer Slip
+        </h1>
+        <div className="inline-flex items-center gap-1.5 text-xs text-ql-muted">
+          <ShieldCheck className="w-3.5 h-3.5 text-ql-primary" />
+          <span>Processed in memory · Image never stored</span>
         </div>
       </div>
 

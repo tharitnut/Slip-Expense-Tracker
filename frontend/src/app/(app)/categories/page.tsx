@@ -17,7 +17,6 @@ import {
   RefreshCw,
   Search,
   X,
-  Layers,
 } from "lucide-react";
 
 export default function CategoriesPage() {
@@ -79,13 +78,10 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-ql-border/60">
-        <div>
-          <h1 className="text-2xl font-serif font-semibold text-ql-text tracking-tight">Spending Categories</h1>
-          <p className="text-ql-muted text-sm mt-0.5">
-            Organize transactions and configure auto-categorization tags
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-ql-border/70">
+        <h1 className="text-2xl sm:text-[26px] font-serif font-semibold text-ql-text tracking-tight">
+          Spending Categories
+        </h1>
         <Button
           variant="primary"
           size="md"
@@ -97,27 +93,33 @@ export default function CategoriesPage() {
         </Button>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar & Count */}
       {categories.length > 0 && (
-        <div className="relative max-w-md">
-          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ql-muted">
-            <Search className="w-4 h-4" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full max-w-md">
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ql-muted">
+              <Search className="w-4 h-4" />
+            </span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search categories..."
+              className="w-full pl-10 pr-9 py-2 rounded-xl border border-ql-border bg-ql-surface text-sm text-ql-text placeholder:text-ql-muted focus:outline-none focus:ring-2 focus:ring-ql-primary/30 focus:border-ql-primary transition"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-ql-muted hover:text-ql-text transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <span className="text-xs text-ql-muted tabular-nums">
+            {filteredCategories.length} of {categories.length}{" "}
+            {categories.length === 1 ? "category" : "categories"}
           </span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search categories..."
-            className="w-full pl-10 pr-9 py-2 rounded-xl border border-ql-border bg-ql-surface text-sm text-ql-text placeholder:text-ql-muted focus:outline-none focus:ring-2 focus:ring-ql-primary/30 focus:border-ql-primary transition"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-ql-muted hover:text-ql-text transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
         </div>
       )}
 
@@ -152,38 +154,34 @@ export default function CategoriesPage() {
           </Button>
         </Card>
       ) : filteredCategories.length === 0 ? (
-        /* Empty State */
-        <Card className="p-12 text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-ql-primary-light text-ql-primary flex items-center justify-center mx-auto">
-            <Layers className="w-7 h-7" />
-          </div>
-          <div>
-            <h3 className="text-base font-serif font-semibold text-ql-text">No categories found</h3>
-            <p className="text-xs text-ql-muted mt-1 max-w-sm mx-auto">
+        /* Empty State — Receipt Ledger style */
+        <div className="receipt-border rounded-2xl bg-ql-surface/60 px-6 py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-xs font-mono uppercase tracking-[0.12em] text-ql-muted">
+              {search ? "No match" : "Empty taxonomy"}
+            </p>
+            <h3 className="text-base font-serif font-semibold text-ql-text">
+              {search ? `No categories matching "${search}"` : "No categories defined yet"}
+            </h3>
+            <p className="text-xs text-ql-muted">
               {search
-                ? `No categories match "${search}". Try clearing search.`
-                : "No categories exist yet. Create your first category to start organizing your spending."}
+                ? "Try clearing your search term to view all categories."
+                : "Create your first category to start tagging and auto-categorizing merchants."}
             </p>
           </div>
-          {search ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setSearch("")}
-            >
-              Clear Search
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
-              size="md"
-              onClick={handleOpenAddModal}
-            >
-              <Plus className="w-4 h-4" />
-              <span>Create Category</span>
-            </Button>
-          )}
-        </Card>
+          <div className="shrink-0">
+            {search ? (
+              <Button variant="secondary" size="sm" onClick={() => setSearch("")}>
+                Clear Search
+              </Button>
+            ) : (
+              <Button variant="primary" size="md" onClick={handleOpenAddModal}>
+                <Plus className="w-4 h-4" />
+                <span>Create Category</span>
+              </Button>
+            )}
+          </div>
+        </div>
       ) : (
         /* Categories Cards Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

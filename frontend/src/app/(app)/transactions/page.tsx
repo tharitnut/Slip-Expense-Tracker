@@ -20,7 +20,6 @@ import {
   Filter,
   Pencil,
   Trash2,
-  Receipt,
   FileCheck2,
   ChevronLeft,
   ChevronRight,
@@ -28,7 +27,6 @@ import {
   RefreshCw,
   X,
   Loader2,
-  SlidersHorizontal,
 } from "lucide-react";
 
 const PAGE_SIZE = 20;
@@ -279,13 +277,10 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-ql-border/60">
-        <div>
-          <h1 className="text-2xl font-serif font-semibold text-ql-text tracking-tight">Transactions</h1>
-          <p className="text-ql-muted text-sm mt-0.5">
-            View, filter, and manage your personal spending records
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-ql-border/70">
+        <h1 className="text-2xl sm:text-[26px] font-serif font-semibold text-ql-text tracking-tight">
+          Transactions
+        </h1>
         <div className="flex flex-wrap items-center gap-2.5">
           <Button
             variant="secondary"
@@ -320,9 +315,72 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <Card className="p-4 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Unified Ledger Toolbar */}
+      <div className="space-y-3">
+        {/* Segmented View Tabs */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ql-border/70">
+          <div className="flex items-center gap-1 overflow-x-auto -mb-px">
+            {(
+              [
+                { id: "all", label: "All entries" },
+                { id: "slip", label: "Bank slips" },
+                { id: "manual", label: "Manual" },
+                { id: "high", label: "> ฿500" },
+              ] as const
+            ).map((tab) => {
+              const isActive = activeChip === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveChip(tab.id)}
+                  className={`px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                    isActive
+                      ? "border-ql-primary text-ql-text"
+                      : "border-transparent text-ql-muted hover:text-ql-text"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={() => setActiveChip("uncategorized")}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                activeChip === "uncategorized"
+                  ? "border-ql-primary text-ql-text"
+                  : "border-transparent text-ql-muted hover:text-ql-text"
+              }`}
+            >
+              <span>Uncategorized</span>
+              {chipCounts.uncategorized > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full bg-ql-error-light text-ql-error tabular-nums">
+                  {chipCounts.uncategorized}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 pb-2">
+            <span className="text-xs text-ql-muted tabular-nums">
+              {total} {total === 1 ? "entry" : "entries"}
+            </span>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="text-xs text-ql-primary hover:underline font-medium cursor-pointer"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Search & Filter Controls */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
           {/* Search Box */}
           <div className="relative md:col-span-2">
             <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ql-muted">
@@ -395,129 +453,7 @@ export default function TransactionsPage() {
             </select>
           </div>
         </div>
-
-        {/* Quick Filter Chips */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-ql-border/40">
-          <span className="text-xs font-medium text-ql-muted mr-0.5 flex items-center gap-1">
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Filter:</span>
-          </span>
-
-          <button
-            type="button"
-            onClick={() => setActiveChip("all")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-              activeChip === "all"
-                ? "bg-ql-primary text-white shadow-xs"
-                : "bg-ql-surface text-ql-muted border border-ql-border hover:bg-ql-primary-light hover:text-ql-text"
-            }`}
-          >
-            <span>All</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                activeChip === "all" ? "bg-white/20 text-white" : "bg-ql-bg text-ql-muted"
-              }`}
-            >
-              {chipCounts.all}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveChip("slip")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-              activeChip === "slip"
-                ? "bg-ql-primary text-white shadow-xs"
-                : "bg-ql-surface text-ql-muted border border-ql-border hover:bg-ql-primary-light hover:text-ql-text"
-            }`}
-          >
-            <ScanLine className="w-3 h-3 text-ql-accent" />
-            <span>Bank Slips</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                activeChip === "slip" ? "bg-white/20 text-white" : "bg-ql-bg text-ql-muted"
-              }`}
-            >
-              {chipCounts.slip}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveChip("manual")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-              activeChip === "manual"
-                ? "bg-ql-primary text-white shadow-xs"
-                : "bg-ql-surface text-ql-muted border border-ql-border hover:bg-ql-primary-light hover:text-ql-text"
-            }`}
-          >
-            <Pencil className="w-3 h-3 text-ql-muted" />
-            <span>Manual</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                activeChip === "manual" ? "bg-white/20 text-white" : "bg-ql-bg text-ql-muted"
-              }`}
-            >
-              {chipCounts.manual}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveChip("high")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-              activeChip === "high"
-                ? "bg-ql-primary text-white shadow-xs"
-                : "bg-ql-surface text-ql-muted border border-ql-border hover:bg-ql-primary-light hover:text-ql-text"
-            }`}
-          >
-            <span>&gt; ฿500</span>
-            <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                activeChip === "high" ? "bg-white/20 text-white" : "bg-ql-bg text-ql-muted"
-              }`}
-            >
-              {chipCounts.high}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveChip("uncategorized")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-              activeChip === "uncategorized"
-                ? "bg-ql-primary text-white shadow-xs"
-                : "bg-ql-surface text-ql-muted border border-ql-border hover:bg-ql-primary-light hover:text-ql-text"
-            }`}
-          >
-            <AlertCircle className="w-3 h-3 text-ql-error" />
-            <span>Uncategorized</span>
-            {chipCounts.uncategorized > 0 && (
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  activeChip === "uncategorized"
-                    ? "bg-white/20 text-white"
-                    : "bg-ql-error-light text-ql-error"
-                }`}
-              >
-                {chipCounts.uncategorized}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {hasActiveFilters && (
-          <div className="flex items-center justify-between pt-2 border-t border-ql-border/40 text-xs text-ql-muted">
-            <span>Filters active</span>
-            <button
-              onClick={handleResetFilters}
-              className="text-ql-primary hover:underline font-medium cursor-pointer"
-            >
-              Reset filters
-            </button>
-          </div>
-        )}
-      </Card>
+      </div>
 
       {/* Main Content Area */}
       {isLoading ? (
@@ -550,58 +486,54 @@ export default function TransactionsPage() {
           </Button>
         </Card>
       ) : transactions.length === 0 ? (
-        /* Empty State */
-        <Card className="p-12 text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-ql-primary-light text-ql-primary flex items-center justify-center mx-auto">
-            <Receipt className="w-7 h-7" />
-          </div>
-          <div>
-            <h3 className="text-base font-serif font-semibold text-ql-text">No transactions found</h3>
-            <p className="text-xs text-ql-muted mt-1 max-w-sm mx-auto">
+        /* Empty State — Receipt Ledger style */
+        <div className="receipt-border rounded-2xl bg-ql-surface/60 px-6 py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-xs font-mono uppercase tracking-[0.12em] text-ql-muted">
+              {hasActiveFilters ? "No matching records" : "Empty ledger"}
+            </p>
+            <h3 className="text-base font-serif font-semibold text-ql-text">
+              {hasActiveFilters ? "Nothing matched your filters" : "No expenses recorded yet"}
+            </h3>
+            <p className="text-xs text-ql-muted">
               {hasActiveFilters
-                ? "No entries match your current search filters. Try clearing filters to see all records."
-                : "You haven't added any expense records yet. Click below to add your first expense or scan a slip."}
+                ? "Try clearing your search or switching tabs to view all entries."
+                : "Add an expense manually or scan a Thai bank transfer slip to get started."}
             </p>
           </div>
-          {hasActiveFilters ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleResetFilters}
-            >
-              Reset Filters
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
-              size="md"
-              onClick={handleOpenAddModal}
-            >
-              <Plus className="w-4 h-4" />
-              <span>Record Your First Expense</span>
-            </Button>
-          )}
-        </Card>
+          <div className="shrink-0">
+            {hasActiveFilters ? (
+              <Button variant="secondary" size="sm" onClick={handleResetFilters}>
+                Clear Filters
+              </Button>
+            ) : (
+              <Button variant="primary" size="md" onClick={handleOpenAddModal}>
+                <Plus className="w-4 h-4" />
+                <span>Add Expense</span>
+              </Button>
+            )}
+          </div>
+        </div>
       ) : (
         /* Data Display: Desktop Table + Mobile Cards */
         <Card padding="none" className="overflow-hidden">
           {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-sm text-ql-text">
-              <thead className="bg-ql-bg/70 border-b border-ql-border text-[11px] font-medium text-ql-muted uppercase tracking-wider">
+              <thead className="bg-ql-bg/50 border-b border-ql-border text-xs font-medium text-ql-muted">
                 <tr>
-                  <th className="py-3 px-4">Date & Time</th>
-                  <th className="py-3 px-4">Merchant & Memo</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Source</th>
-                  <th className="py-3 px-4 text-right">Amount</th>
-                  <th className="py-3 px-4 text-center">Actions</th>
+                  <th className="py-2.5 px-4 font-medium">Date</th>
+                  <th className="py-2.5 px-4 font-medium">Merchant</th>
+                  <th className="py-2.5 px-4 font-medium">Category</th>
+                  <th className="py-2.5 px-4 font-medium">Source</th>
+                  <th className="py-2.5 px-4 font-medium text-right">Amount</th>
+                  <th className="py-2.5 px-4 w-20" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-ql-border/40">
                 {transactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-ql-bg/50 transition-colors group">
-                    <td className="py-3.5 px-4 whitespace-nowrap text-xs text-ql-muted">
+                    <td className="py-3.5 px-4 whitespace-nowrap text-xs text-ql-muted tabular-nums">
                       {formatDisplayDate(tx.occurred_at)}
                     </td>
                     <td className="py-3.5 px-4">
@@ -623,14 +555,12 @@ export default function TransactionsPage() {
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       {tx.source === "slip" ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-ql-accent bg-ql-accent-light px-2 py-0.5 rounded-md border border-ql-accent/20">
-                          <FileCheck2 className="w-3 h-3" />
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-ql-accent">
+                          <FileCheck2 className="w-3.5 h-3.5" />
                           Slip
                         </span>
                       ) : (
-                        <span className="text-[11px] text-ql-muted bg-ql-bg px-2 py-0.5 rounded-md border border-ql-border">
-                          Manual
-                        </span>
+                        <span className="text-xs text-ql-muted">Manual</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right whitespace-nowrap font-semibold text-ql-text tabular-nums">
