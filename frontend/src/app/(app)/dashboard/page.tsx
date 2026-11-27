@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { MonthlySummary, TransactionPage } from "@/types";
 import { Card, Button, Modal } from "@/components/ui";
+import { EmptyLedgerState } from "@/components/EmptyLedgerState";
 import { useToast } from "@/context/ToastContext";
 import {
   ResponsiveContainer,
@@ -490,7 +491,7 @@ export default function DashboardPage() {
                     {summary.transaction_count}
                   </p>
                   <p className="text-xs text-ql-muted mt-1">
-                    {slipStats
+                    {slipStats && monthTxData && monthTxData.total <= monthTxData.items.length
                       ? `${slipStats.slipCount} slip · ${slipStats.total - slipStats.slipCount} manual`
                       : `In ${selectedMonthLabel}`}
                   </p>
@@ -787,34 +788,27 @@ export default function DashboardPage() {
               </Card>
             </div>
           ) : (
-            /* Empty State for Month — Receipt Ledger style */
-            <div className="receipt-border rounded-2xl bg-ql-surface/60 px-6 py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <p className="text-xs font-mono uppercase tracking-[0.12em] text-ql-muted">
-                  No entries · {selectedMonthLabel}
-                </p>
-                <h3 className="text-base font-serif font-semibold text-ql-text">
-                  Nothing recorded for this month yet
-                </h3>
-                <p className="text-xs text-ql-muted">
-                  Scan a Thai bank transfer slip or add an expense manually to see your breakdown.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                <Link href="/upload">
-                  <Button variant="primary" size="sm">
-                    <ScanLine className="w-4 h-4" />
-                    <span>Scan Slip</span>
-                  </Button>
-                </Link>
-                <Link href="/transactions">
-                  <Button variant="secondary" size="sm">
-                    <Plus className="w-4 h-4" />
-                    <span>Add Expense</span>
-                  </Button>
-                </Link>
-              </div>
-            </div>
+            <EmptyLedgerState
+              eyebrow={`No entries · ${selectedMonthLabel}`}
+              title="Nothing recorded for this month yet"
+              description="Scan a Thai bank transfer slip or add an expense manually to see your breakdown."
+              action={
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Link href="/upload">
+                    <Button variant="primary" size="sm">
+                      <ScanLine className="w-4 h-4" />
+                      <span>Scan Slip</span>
+                    </Button>
+                  </Link>
+                  <Link href="/transactions">
+                    <Button variant="secondary" size="sm">
+                      <Plus className="w-4 h-4" />
+                      <span>Add Expense</span>
+                    </Button>
+                  </Link>
+                </div>
+              }
+            />
           )}
         </div>
       ) : null}

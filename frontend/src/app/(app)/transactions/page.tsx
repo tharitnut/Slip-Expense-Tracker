@@ -9,6 +9,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { TransactionModal } from "@/components/TransactionModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { Card, Button, Badge } from "@/components/ui";
+import { EmptyLedgerState } from "@/components/EmptyLedgerState";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -205,15 +206,10 @@ export default function TransactionsPage() {
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const rawTransactions = useMemo(() => txData?.items || [], [txData]);
 
-  const chipCounts = useMemo(() => {
-    return {
-      all: rawTransactions.length,
-      slip: rawTransactions.filter((t) => t.source === "slip").length,
-      manual: rawTransactions.filter((t) => t.source === "manual").length,
-      high: rawTransactions.filter((t) => Number(t.amount) >= 500).length,
-      uncategorized: rawTransactions.filter((t) => t.category_id === null).length,
-    };
-  }, [rawTransactions]);
+  const uncategorizedCount = useMemo(
+    () => rawTransactions.filter((t) => t.category_id === null).length,
+    [rawTransactions]
+  );
 
   const transactions = useMemo(() => {
     if (activeChip === "slip") return rawTransactions.filter((t) => t.source === "slip");
@@ -355,9 +351,9 @@ export default function TransactionsPage() {
               }`}
             >
               <span>Uncategorized</span>
-              {chipCounts.uncategorized > 0 && (
+              {uncategorizedCount > 0 && (
                 <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-semibold rounded-full bg-ql-error-light text-ql-error tabular-nums">
-                  {chipCounts.uncategorized}
+                  {uncategorizedCount}
                 </span>
               )}
             </button>
@@ -365,7 +361,9 @@ export default function TransactionsPage() {
 
           <div className="flex items-center gap-3 pb-2">
             <span className="text-xs text-ql-muted tabular-nums">
-              {total} {total === 1 ? "entry" : "entries"}
+              {activeChip === "all"
+                ? `${total} ${total === 1 ? "entry" : "entries"}`
+                : `${transactions.length} shown`}
             </span>
             {hasActiveFilters && (
               <button
@@ -486,23 +484,16 @@ export default function TransactionsPage() {
           </Button>
         </Card>
       ) : transactions.length === 0 ? (
-        /* Empty State — Receipt Ledger style */
-        <div className="receipt-border rounded-2xl bg-ql-surface/60 px-6 py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-xs font-mono uppercase tracking-[0.12em] text-ql-muted">
-              {hasActiveFilters ? "No matching records" : "Empty ledger"}
-            </p>
-            <h3 className="text-base font-serif font-semibold text-ql-text">
-              {hasActiveFilters ? "Nothing matched your filters" : "No expenses recorded yet"}
-            </h3>
-            <p className="text-xs text-ql-muted">
-              {hasActiveFilters
-                ? "Try clearing your search or switching tabs to view all entries."
-                : "Add an expense manually or scan a Thai bank transfer slip to get started."}
-            </p>
-          </div>
-          <div className="shrink-0">
-            {hasActiveFilters ? (
+        <EmptyLedgerState
+          eyebrow={hasActiveFilters ? "No matching records" : "Empty ledger"}
+          title={hasActiveFilters ? "Nothing matched your filters" : "No expenses recorded yet"}
+          description={
+            hasActiveFilters
+              ? "Try clearing your search or switching tabs to view all entries."
+              : "Add an expense manually or scan a Thai bank transfer slip to get started."
+          }
+          action={
+            hasActiveFilters ? (
               <Button variant="secondary" size="sm" onClick={handleResetFilters}>
                 Clear Filters
               </Button>
@@ -511,9 +502,9 @@ export default function TransactionsPage() {
                 <Plus className="w-4 h-4" />
                 <span>Add Expense</span>
               </Button>
-            )}
-          </div>
-        </div>
+            )
+          }
+        />
       ) : (
         /* Data Display: Desktop Table + Mobile Cards */
         <Card padding="none" className="overflow-hidden">

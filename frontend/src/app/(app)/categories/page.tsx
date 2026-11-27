@@ -7,6 +7,7 @@ import { Category } from "@/types";
 import { CategoryModal } from "@/components/CategoryModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { Card, Button } from "@/components/ui";
+import { EmptyLedgerState } from "@/components/EmptyLedgerState";
 import { useToast } from "@/context/ToastContext";
 import {
   Plus,
@@ -154,23 +155,16 @@ export default function CategoriesPage() {
           </Button>
         </Card>
       ) : filteredCategories.length === 0 ? (
-        /* Empty State — Receipt Ledger style */
-        <div className="receipt-border rounded-2xl bg-ql-surface/60 px-6 py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-xs font-mono uppercase tracking-[0.12em] text-ql-muted">
-              {search ? "No match" : "Empty taxonomy"}
-            </p>
-            <h3 className="text-base font-serif font-semibold text-ql-text">
-              {search ? `No categories matching "${search}"` : "No categories defined yet"}
-            </h3>
-            <p className="text-xs text-ql-muted">
-              {search
-                ? "Try clearing your search term to view all categories."
-                : "Create your first category to start tagging and auto-categorizing merchants."}
-            </p>
-          </div>
-          <div className="shrink-0">
-            {search ? (
+        <EmptyLedgerState
+          eyebrow={search ? "No match" : "Empty categories"}
+          title={search ? `No categories matching "${search}"` : "No categories defined yet"}
+          description={
+            search
+              ? "Try clearing your search term to view all categories."
+              : "Create your first category to start tagging and auto-categorizing merchants."
+          }
+          action={
+            search ? (
               <Button variant="secondary" size="sm" onClick={() => setSearch("")}>
                 Clear Search
               </Button>
@@ -179,9 +173,9 @@ export default function CategoriesPage() {
                 <Plus className="w-4 h-4" />
                 <span>Create Category</span>
               </Button>
-            )}
-          </div>
-        </div>
+            )
+          }
+        />
       ) : (
         /* Categories Cards Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
