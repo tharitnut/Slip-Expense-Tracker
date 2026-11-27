@@ -44,10 +44,11 @@ A modern full-stack personal finance web application built to streamline everyda
 - **⌨️ Power-User Keyboard Shortcuts**:
   - Full keyboard navigation and actions for high-velocity workflows: `?` (Cheatsheet modal), `D` (Dashboard), `T` (Transactions), `U` (Scan Slip), `C` (Categories), `N` (Add Expense), and `M` (Dark/Light toggle).
   - Built-in typing guard automatically suppresses shortcuts when typing in search and form inputs.
-- **💡 Automated Spending Intelligence**:
-  - Smart Monthly Insights deck analyzing peak spending days, top merchants, bank slip verification ratio, and month-end spending pacing vs. budget.
-- **🏷️ Instant Quick Filter Chips**:
-  - 1-click ledger filtering for All records, OCR Bank Slips (`source === 'slip'`), Manual entries, High-value expenses (`> ฿500`), and Uncategorized items with live count badges.
+- **💡 Ledger Highlights & Spending Pacing**:
+  - Compact highlights strip analyzing peak spending day, top payee, bank slip coverage ratio, and month-end spending projection vs. budget.
+- **🏷️ Segmented View Tabs & Inline Category Quick-Assign**:
+  - Instant view tabs for All entries, Bank slips (`source === 'slip'`), Manual entries, High-value expenses (`> ฿500`), and Uncategorized items (with live pending badge).
+  - Click any category or `Uncategorized` badge directly in the table or mobile card to reassign it inline without opening a modal.
 - **⚡ Instant 1-Click Demo Account**:
   - Test drive the full application directly from `/login` with a single click — no signup or email verification needed.
   - Automatically provisions sample transactions (coffee, transit, groceries, utilities) and a monthly budget target for immediate live exploration.
@@ -74,11 +75,13 @@ A modern full-stack personal finance web application built to streamline everyda
 - **🧠 Learned Auto-Categorization**:
   - Remembers user preferences: when you assign a category to a merchant, future transactions from that same merchant are auto-categorized automatically.
 - **📊 Interactive Monthly Dashboard (Recharts)**:
-  - 4 Key KPI metrics: Total Spending, Month-over-Month Delta (%), Transaction Count, and Daily Average.
-  - Visual category breakdown donut chart with center total display and warm forest-gold palette.
-  - Daily spending bar chart showing daily spending trends with minimal gridlines.
-  - 12-month navigation selector.
-  - Real-time cache synchronization with TanStack Query.
+  - Asymmetric ledger overview pairing the receipt-bordered Total Spent card (with budget progress bar) alongside Previous Month, Recorded Entries, and Daily Average.
+  - Interactive category breakdown donut chart: hover a slice or category row to highlight it and preview its total in the center; click any category row to deep-link into `/transactions` filtered by that category and month.
+  - Daily spending bar chart showing daily spending trends with minimal gridlines and dark-mode-aware tooltips.
+  - 12-month navigation selector and real-time cache synchronization with TanStack Query.
+- **♿ Accessible & Responsive Craft**:
+  - Split editorial authentication layout featuring a live receipt preview on desktop.
+  - Keyboard-friendly modals (`Esc` to close), skip-to-main-content link, `aria-label` coverage on icon actions, and touch-friendly mobile targets.
 - **📥 CSV Data Export**:
   - Export transactions with one click.
   - Includes **UTF-8 BOM (`\ufeff`)** encoding to ensure Thai characters and text render cleanly in Microsoft Excel, Apple Numbers, and Google Sheets without encoding issues.
@@ -114,7 +117,7 @@ slip-expense-tracker/
 ├── frontend/
 │   └── src/
 │       ├── app/           # Next.js App Router ((app) shell & (auth) pages)
-│       ├── components/ui/ # Quiet Ledger design system (Card, Button, Table, Modal...)
+│       ├── components/    # Shared UI (AuthEditorialShell, EmptyLedgerState, modals) & ui/
 │       ├── context/       # Auth & Theme (Dark Mode) state providers
 │       └── lib/api.ts     # Typed API client & CSV stream downloader
 │
@@ -227,3 +230,4 @@ npm run build
 - [X] **Phase F (Quiet Ledger Redesign & Dark Mode)**: Minimalist financial ledger design system, custom typography (Noto Sans Thai + Fraunces), signature receipt details, and zero-FOUC Dark Mode toggle.
 - [X] **Phase G (Portfolio & UX Polish)**: 1-Click Demo account with realistic seed transactions, Monthly Budget Target with color-coded progress pacing bar, Clipboard Paste (`Ctrl + V`) on Slip Upload, Quiet Ledger Toast notification system, and visual screenshot showcase gallery.
 - [X] **Phase H (Power-User & Intelligent UX)**: Global keyboard shortcuts (`?`, `D`, `T`, `U`, `C`, `N`, `M`), automated Smart Spending Insights deck on Dashboard, and instant Quick Filter Chips on Transactions.
+- [X] **Phase I (UX/UI Polish, Accessibility & Interactive Upgrades)**: Quiet Ledger editorial hierarchy, interactive Donut hover & category deep-linking, inline category quick-assign, split editorial auth preview, and WCAG keyboard/touch accessibility improvements.
