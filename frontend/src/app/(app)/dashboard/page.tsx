@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 
 const CHART_COLORS = [
-  "#1F4D3A", // primary deep green
+  "var(--ql-primary, #1F4D3A)", // primary green (adapts to dark mode)
   "#B08D57", // champagne gold
   "#6B746E", // warm gray
   "#3A7D5C", // sage green
@@ -140,6 +140,7 @@ export default function DashboardPage() {
   const [budgetInput, setBudgetInput] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [hoveredCategoryIndex, setHoveredCategoryIndex] = useState<number | null>(null);
   const isMounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -308,17 +309,20 @@ export default function DashboardPage() {
           {/* Month Selector Buttons */}
           <div className="flex items-center bg-ql-surface border border-ql-border rounded-xl p-1 shadow-xs">
             <button
+              type="button"
               onClick={handlePrevMonth}
               title="Previous Month"
-              className="p-1.5 rounded-lg text-ql-muted hover:text-ql-text hover:bg-ql-bg transition cursor-pointer"
+              aria-label="Previous month"
+              className="p-1.5 rounded-lg text-ql-muted hover:text-ql-text hover:bg-ql-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
             <select
               value={selectedMonth}
+              aria-label="Select month"
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-transparent text-sm font-medium text-ql-text px-2.5 py-1 focus:outline-none cursor-pointer"
+              className="bg-transparent text-sm font-medium text-ql-text px-2.5 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 rounded-md cursor-pointer"
             >
               {recentMonths.map((m) => (
                 <option key={m.value} value={m.value} className="bg-ql-surface text-ql-text">
@@ -328,9 +332,11 @@ export default function DashboardPage() {
             </select>
 
             <button
+              type="button"
               onClick={handleNextMonth}
               title="Next Month"
-              className="p-1.5 rounded-lg text-ql-muted hover:text-ql-text hover:bg-ql-bg transition cursor-pointer"
+              aria-label="Next month"
+              className="p-1.5 rounded-lg text-ql-muted hover:text-ql-text hover:bg-ql-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 transition-colors cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -406,7 +412,7 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                <p className="text-3xl sm:text-4xl font-serif font-bold text-ql-text tracking-tight tabular-nums">
+                <p className="text-3xl sm:text-4xl font-serif font-semibold text-ql-text tracking-tight tabular-nums">
                   {formatCurrency(summary.total)}
                 </p>
               </div>
@@ -432,7 +438,8 @@ export default function DashboardPage() {
                               setIsBudgetModalOpen(true);
                             }}
                             title="Edit target budget"
-                            className="p-0.5 text-ql-muted hover:text-ql-primary transition-colors cursor-pointer"
+                            aria-label="Edit target budget"
+                            className="p-1 rounded text-ql-muted hover:text-ql-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 transition-colors cursor-pointer"
                           >
                             <Pencil className="w-3 h-3" />
                           </button>
@@ -624,11 +631,18 @@ export default function DashboardPage() {
                           paddingAngle={2}
                           stroke="var(--ql-surface, #ffffff)"
                           strokeWidth={2}
+                          onMouseEnter={(_, index) => setHoveredCategoryIndex(index)}
+                          onMouseLeave={() => setHoveredCategoryIndex(null)}
                         >
                           {summary.by_category.map((entry, index) => (
                             <Cell
                               key={`cell-${entry.category_id || entry.category_name}`}
                               fill={CHART_COLORS[index % CHART_COLORS.length]}
+                              fillOpacity={
+                                hoveredCategoryIndex === null || hoveredCategoryIndex === index
+                                  ? 1
+                                  : 0.3
+                              }
                             />
                           ))}
                         </Pie>
@@ -655,25 +669,51 @@ export default function DashboardPage() {
                         />
                       </PieChart>
                     </ResponsiveContainer>
-                    {/* Donut center total */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <span className="text-[10px] tracking-wider uppercase font-medium text-ql-muted">Total</span>
-                      <span className="text-sm font-serif font-bold text-ql-text tabular-nums">
-                        {formatCurrency(summary.total)}
-                      </span>
-                    </div>
+                    {/* Donut center total / hovered category */}
+                    {(() => {
+                      const activeCat =
+                        hoveredCategoryIndex !== null
+                          ? summary.by_category[hoveredCategoryIndex]
+                          : null;
+                      return (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-4 text-center">
+                          <span className="text-xs font-medium text-ql-muted truncate max-w-[100px]">
+                            {activeCat ? activeCat.category_name : "Total"}
+                          </span>
+                          <span className="text-sm font-serif font-semibold text-ql-text tabular-nums">
+                            {formatCurrency(activeCat ? activeCat.total : summary.total)}
+                          </span>
+                          {activeCat && (
+                            <span className="text-[11px] text-ql-muted tabular-nums">
+                              {activeCat.percent.toFixed(1)}%
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
-                {/* Categories List with visual proportion bars */}
-                <div className="mt-4 space-y-3">
+                {/* Categories List with visual proportion bars & deep-link */}
+                <div className="mt-4 space-y-2">
                   {summary.by_category.map((cat, idx) => {
                     const color = CHART_COLORS[idx % CHART_COLORS.length];
                     const isTop = idx === 0;
+                    const isDimmed =
+                      hoveredCategoryIndex !== null && hoveredCategoryIndex !== idx;
+                    const href =
+                      cat.category_id !== null
+                        ? `/transactions?category_id=${cat.category_id}&month=${selectedMonth}`
+                        : `/transactions?filter=uncategorized&month=${selectedMonth}`;
                     return (
-                      <div
+                      <Link
                         key={cat.category_id || cat.category_name}
-                        className="space-y-1.5"
+                        href={href}
+                        onMouseEnter={() => setHoveredCategoryIndex(idx)}
+                        onMouseLeave={() => setHoveredCategoryIndex(null)}
+                        className={`block space-y-1.5 rounded-lg px-2 py-1.5 -mx-2 hover:bg-ql-bg/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 transition-[background-color,opacity] ${
+                          isDimmed ? "opacity-50" : "opacity-100"
+                        }`}
                       >
                         <div className="flex items-baseline justify-between text-xs gap-2">
                           <div className="flex items-center gap-2 min-w-0">
@@ -711,7 +751,7 @@ export default function DashboardPage() {
                             }}
                           />
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
@@ -836,7 +876,7 @@ export default function DashboardPage() {
           className="space-y-4"
         >
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+            <label className="block text-xs font-medium text-ql-muted mb-1.5">
               Monthly Spending Limit (THB)
             </label>
             <input

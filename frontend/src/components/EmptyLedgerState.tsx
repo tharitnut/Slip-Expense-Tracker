@@ -19,7 +19,7 @@ export function EmptyLedgerState({
   return (
     <div className="receipt-border rounded-2xl bg-ql-surface/60 px-6 py-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="space-y-1">
-        <p className="text-xs font-mono uppercase tracking-[0.12em] text-ql-muted">
+        <p className="text-xs font-mono text-ql-muted">
           {eyebrow}
         </p>
         <h3 className="text-base font-serif font-semibold text-ql-text">

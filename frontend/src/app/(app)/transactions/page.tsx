@@ -88,16 +88,29 @@ export default function TransactionsPage() {
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [inlineEditTxId, setInlineEditTxId] = useState<number | null>(null);
+  const [updatingCategoryTxId, setUpdatingCategoryTxId] = useState<number | null>(null);
 
   useEffect(() => {
-    // Check if opened via URL param ?action=new
+    // Sync URL query params (?action=new, ?month=YYYY-MM, ?category_id=ID, ?filter=uncategorized)
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("action") === "new") {
-        queueMicrotask(() => {
+      const monthParam = params.get("month");
+      const categoryParam = params.get("category_id");
+      const filterParam = params.get("filter");
+      const actionParam = params.get("action");
+
+      queueMicrotask(() => {
+        if (monthParam) setSelectedMonth(monthParam);
+        if (categoryParam) setSelectedCategoryId(categoryParam);
+        if (filterParam === "uncategorized") setActiveChip("uncategorized");
+        if (actionParam === "new") {
           setEditingTransaction(null);
           setIsModalOpen(true);
-        });
+        }
+      });
+
+      if (actionParam === "new") {
         window.history.replaceState({}, "", window.location.pathname);
       }
     }
@@ -266,6 +279,73 @@ export default function TransactionsPage() {
     setPage(0);
   };
 
+  const handleQuickCategoryChange = async (tx: Transaction, newCategoryId: string) => {
+    const parsedId = newCategoryId ? parseInt(newCategoryId, 10) : null;
+    if (parsedId === tx.category_id) {
+      setInlineEditTxId(null);
+      return;
+    }
+
+    setUpdatingCategoryTxId(tx.id);
+    try {
+      await api.patch(`/transactions/${tx.id}`, {
+        category_id: parsedId,
+      });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["monthly-summary"] });
+      const catName = parsedId ? categoryMap.get(parsedId) : "Uncategorized";
+      toast.success(`Category updated to ${catName}`);
+    } catch {
+      toast.error("Failed to update category");
+    } finally {
+      setUpdatingCategoryTxId(null);
+      setInlineEditTxId(null);
+    }
+  };
+
+  const renderCategoryCell = (tx: Transaction) => {
+    if (inlineEditTxId === tx.id) {
+      return (
+        <select
+          autoFocus
+          aria-label={`Select category for ${tx.merchant || "transaction"}`}
+          disabled={updatingCategoryTxId === tx.id}
+          value={tx.category_id ? String(tx.category_id) : ""}
+          onBlur={() => setInlineEditTxId(null)}
+          onChange={(e) => handleQuickCategoryChange(tx, e.target.value)}
+          className="px-2.5 py-1 rounded-lg border border-ql-primary bg-ql-surface text-xs text-ql-text focus:outline-none focus:ring-2 focus:ring-ql-primary/30 cursor-pointer"
+        >
+          <option value="">Uncategorized</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      );
+    }
+
+    const hasCategory = Boolean(tx.category_id && categoryMap.has(tx.category_id));
+    return (
+      <button
+        type="button"
+        onClick={() => setInlineEditTxId(tx.id)}
+        title="Click to assign category"
+        aria-label={`Change category for ${tx.merchant || "transaction"}`}
+        className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 cursor-pointer transition-opacity hover:opacity-85"
+      >
+        {hasCategory ? (
+          <Badge variant="primary">{categoryMap.get(tx.category_id!)}</Badge>
+        ) : (
+          <Badge variant="default" className="border-dashed hover:border-ql-primary/60">
+            Uncategorized
+          </Badge>
+        )}
+      </button>
+    );
+  };
+
   const hasActiveFilters = Boolean(
     selectedMonth || selectedCategoryId || searchQuery || activeChip !== "all"
   );
@@ -391,16 +471,18 @@ export default function TransactionsPage() {
                 setSearchQuery(e.target.value);
                 setPage(0);
               }}
-              placeholder="Search merchant or memo..."
+              placeholder="Search merchant or memo"
               className="w-full pl-10 pr-9 py-2 rounded-xl border border-ql-border bg-ql-surface text-sm text-ql-text placeholder:text-ql-muted focus:outline-none focus:ring-2 focus:ring-ql-primary/30 focus:border-ql-primary transition"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => {
                   setSearchQuery("");
                   setPage(0);
                 }}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-ql-muted hover:text-ql-text transition"
+                aria-label="Clear search"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-ql-muted hover:text-ql-text focus-visible:outline-none focus-visible:text-ql-primary transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -414,6 +496,7 @@ export default function TransactionsPage() {
             </span>
             <select
               value={selectedMonth}
+              aria-label="Filter by month"
               onChange={(e) => {
                 setSelectedMonth(e.target.value);
                 setPage(0);
@@ -436,6 +519,7 @@ export default function TransactionsPage() {
             </span>
             <select
               value={selectedCategoryId}
+              aria-label="Filter by category"
               onChange={(e) => {
                 setSelectedCategoryId(e.target.value);
                 setPage(0);
@@ -529,20 +613,12 @@ export default function TransactionsPage() {
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="font-medium text-ql-text">
-                        {tx.merchant || <span className="text-ql-muted italic text-xs">Unspecified merchant</span>}
+                        {tx.merchant || <span className="text-ql-muted text-xs">Unspecified merchant</span>}
                       </div>
                       {tx.note && <div className="text-xs text-ql-muted mt-0.5 line-clamp-1">{tx.note}</div>}
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      {tx.category_id && categoryMap.has(tx.category_id) ? (
-                        <Badge variant="primary">
-                          {categoryMap.get(tx.category_id)}
-                        </Badge>
-                      ) : (
-                        <Badge variant="default">
-                          Uncategorized
-                        </Badge>
-                      )}
+                      {renderCategoryCell(tx)}
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       {tx.source === "slip" ? (
@@ -558,18 +634,22 @@ export default function TransactionsPage() {
                       -{formatCurrency(tx.amount)}
                     </td>
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1 opacity-70 group-hover:opacity-100 transition">
+                      <div className="flex items-center justify-center gap-1 opacity-70 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <button
+                          type="button"
                           onClick={() => handleOpenEditModal(tx)}
                           title="Edit"
-                          className="p-1.5 rounded-lg text-ql-muted hover:text-ql-primary hover:bg-ql-primary-light transition cursor-pointer"
+                          aria-label={`Edit ${tx.merchant || "transaction"}`}
+                          className="p-2 rounded-lg text-ql-muted hover:text-ql-primary hover:bg-ql-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 transition-colors cursor-pointer"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => setDeletingTransaction(tx)}
                           title="Delete"
-                          className="p-1.5 rounded-lg text-ql-muted hover:text-ql-error hover:bg-ql-error-light transition cursor-pointer"
+                          aria-label={`Delete ${tx.merchant || "transaction"}`}
+                          className="p-2 rounded-lg text-ql-muted hover:text-ql-error hover:bg-ql-error-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-error/40 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -588,7 +668,7 @@ export default function TransactionsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h4 className="font-semibold text-ql-text text-sm">
-                      {tx.merchant || <span className="text-ql-muted italic">Unspecified</span>}
+                      {tx.merchant || <span className="text-ql-muted">Unspecified</span>}
                     </h4>
                     <span className="text-xs text-ql-muted">{formatDisplayDate(tx.occurred_at)}</span>
                   </div>
@@ -603,15 +683,7 @@ export default function TransactionsPage() {
 
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-center gap-2">
-                    {tx.category_id && categoryMap.has(tx.category_id) ? (
-                      <Badge variant="primary">
-                        {categoryMap.get(tx.category_id)}
-                      </Badge>
-                    ) : (
-                      <Badge variant="default">
-                        Uncategorized
-                      </Badge>
-                    )}
+                    {renderCategoryCell(tx)}
 
                     {tx.source === "slip" && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-ql-accent bg-ql-accent-light px-1.5 py-0.5 rounded">
@@ -621,18 +693,22 @@ export default function TransactionsPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <button
+                      type="button"
                       onClick={() => handleOpenEditModal(tx)}
-                      className="p-1.5 rounded-lg text-ql-muted hover:text-ql-primary hover:bg-ql-primary-light"
+                      aria-label={`Edit ${tx.merchant || "transaction"}`}
+                      className="p-2.5 rounded-lg text-ql-muted hover:text-ql-primary hover:bg-ql-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 transition-colors cursor-pointer"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
+                      <Pencil className="w-4 h-4" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => setDeletingTransaction(tx)}
-                      className="p-1.5 rounded-lg text-ql-muted hover:text-ql-error hover:bg-ql-error-light"
+                      aria-label={`Delete ${tx.merchant || "transaction"}`}
+                      className="p-2.5 rounded-lg text-ql-muted hover:text-ql-error hover:bg-ql-error-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-error/40 transition-colors cursor-pointer"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -653,9 +729,11 @@ export default function TransactionsPage() {
 
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => setPage((p) => Math.max(p - 1, 0))}
                   disabled={page === 0}
-                  className="p-1.5 rounded-lg border border-ql-border text-ql-muted hover:text-ql-text hover:bg-ql-surface disabled:opacity-30 disabled:hover:bg-transparent transition cursor-pointer"
+                  aria-label="Previous page"
+                  className="p-2 rounded-lg border border-ql-border text-ql-muted hover:text-ql-text hover:bg-ql-surface disabled:opacity-30 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 transition-colors cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -663,9 +741,11 @@ export default function TransactionsPage() {
                   Page {page + 1} of {totalPages}
                 </span>
                 <button
+                  type="button"
                   onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
                   disabled={page >= totalPages - 1}
-                  className="p-1.5 rounded-lg border border-ql-border text-ql-muted hover:text-ql-text hover:bg-ql-surface disabled:opacity-30 disabled:hover:bg-transparent transition cursor-pointer"
+                  aria-label="Next page"
+                  className="p-2 rounded-lg border border-ql-border text-ql-muted hover:text-ql-text hover:bg-ql-surface disabled:opacity-30 disabled:hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 transition-colors cursor-pointer"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

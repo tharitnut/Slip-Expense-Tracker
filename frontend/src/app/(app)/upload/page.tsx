@@ -289,9 +289,9 @@ export default function UploadSlipPage() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`cursor-pointer receipt-border rounded-2xl p-8 md:p-12 text-center transition-all duration-150 flex flex-col items-center justify-center gap-3 ${
+            className={`cursor-pointer receipt-border rounded-2xl p-8 md:p-12 text-center transition-colors duration-150 flex flex-col items-center justify-center gap-3 ${
               isDragging
-                ? "border-ql-primary bg-ql-primary-light/40 scale-[0.99]"
+                ? "border-ql-primary bg-ql-primary-light/40"
                 : "bg-ql-bg/40 hover:bg-ql-bg/80 hover:border-ql-primary/60"
             }`}
           >

@@ -8,9 +8,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { Wallet, Loader2, Sparkles } from "lucide-react";
+import { Wallet, Loader2, ArrowRight } from "lucide-react";
 import { Card, Button } from "@/components/ui";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthEditorialShell } from "@/components/AuthEditorialShell";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address"),
@@ -193,10 +193,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-ql-bg relative">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
+    <AuthEditorialShell>
       <Card className="w-full max-w-md p-8 sm:p-10 shadow-xs">
         <div className="flex flex-col items-center mb-8">
           <div className="w-11 h-11 rounded-xl bg-ql-primary text-white flex items-center justify-center mb-3">
@@ -214,7 +211,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+            <label className="block text-xs font-medium text-ql-muted mb-1.5">
               Email address
             </label>
             <input
@@ -231,7 +228,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+            <label className="block text-xs font-medium text-ql-muted mb-1.5">
               Password
             </label>
             <input
@@ -269,8 +266,8 @@ export default function LoginPage() {
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-ql-border" />
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-ql-surface px-2.5 text-ql-muted tracking-wider">
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-ql-surface px-2.5 text-ql-muted">
               Or test drive
             </span>
           </div>
@@ -291,8 +288,8 @@ export default function LoginPage() {
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4 mr-1 text-ql-accent" />
               <span>Explore Demo Account</span>
+              <ArrowRight className="w-4 h-4 text-ql-muted" />
             </>
           )}
         </Button>
@@ -304,6 +301,6 @@ export default function LoginPage() {
           </Link>
         </div>
       </Card>
-    </div>
+    </AuthEditorialShell>
   );
 }

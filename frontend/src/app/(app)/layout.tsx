@@ -93,12 +93,18 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-ql-bg pb-20 md:pb-0">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-3 focus:py-2 focus:rounded-lg focus:bg-ql-surface focus:text-ql-text focus:border focus:border-ql-border focus:shadow-md text-xs font-medium"
+      >
+        Skip to main content
+      </a>
       {/* Top Navbar for desktop & tablet */}
       <header className="sticky top-0 z-40 bg-ql-surface/90 backdrop-blur-md border-b border-ql-border">
         <div className="max-w-[1100px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/transactions" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-lg bg-ql-primary text-white flex items-center justify-center transition-transform group-hover:scale-105">
+              <div className="w-8 h-8 rounded-lg bg-ql-primary text-white flex items-center justify-center transition-colors group-hover:bg-ql-primary-hover">
                 <Wallet className="w-4 h-4" />
               </div>
               <span className="text-base font-serif font-semibold tracking-tight text-ql-text">Slip Tracker</span>
@@ -164,7 +170,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-[1100px] w-full mx-auto px-4 sm:px-6 py-6">
+      <main id="main-content" className="flex-1 max-w-[1100px] w-full mx-auto px-4 sm:px-6 py-6">
         {isLoading || !user ? (
           <div className="min-h-[50vh] flex flex-col items-center justify-center">
             <Loader2 className="w-7 h-7 text-ql-primary animate-spin mb-3" />

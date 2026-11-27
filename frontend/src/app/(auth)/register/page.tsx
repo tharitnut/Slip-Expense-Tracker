@@ -10,7 +10,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Wallet, Loader2 } from "lucide-react";
 import { Card, Button } from "@/components/ui";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { AuthEditorialShell } from "@/components/AuthEditorialShell";
 
 const registerSchema = z
   .object({
@@ -72,10 +72,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-ql-bg relative">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
+    <AuthEditorialShell>
       <Card className="w-full max-w-md p-8 sm:p-10 shadow-xs">
         <div className="flex flex-col items-center mb-8">
           <div className="w-11 h-11 rounded-xl bg-ql-primary text-white flex items-center justify-center mb-3">
@@ -93,7 +90,7 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+            <label className="block text-xs font-medium text-ql-muted mb-1.5">
               Email address
             </label>
             <input
@@ -110,7 +107,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+            <label className="block text-xs font-medium text-ql-muted mb-1.5">
               Password (min. 8 characters)
             </label>
             <input
@@ -127,7 +124,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-ql-muted mb-1.5">
+            <label className="block text-xs font-medium text-ql-muted mb-1.5">
               Confirm password
             </label>
             <input
@@ -170,6 +167,6 @@ export default function RegisterPage() {
           </Link>
         </div>
       </Card>
-    </div>
+    </AuthEditorialShell>
   );
 }

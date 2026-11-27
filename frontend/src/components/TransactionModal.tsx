@@ -91,12 +91,24 @@ export function TransactionModal({
     }
   }, [isOpen, initialData, reset]);
 
-  if (!isOpen) return null;
-
   const handleClose = () => {
     setApiError(null);
     onClose();
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setApiError(null);
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
 
   const onSubmit = async (data: TransactionFormData) => {
     setApiError(null);
@@ -134,15 +146,22 @@ export function TransactionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-150">
-      <div className="w-full max-w-lg bg-ql-surface rounded-2xl shadow-lg border border-ql-border overflow-hidden">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={initialData ? "Edit Transaction" : "Record Expense"}
+        className="w-full max-w-lg bg-ql-surface rounded-2xl shadow-lg border border-ql-border overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-ql-border/60 bg-ql-bg/40">
           <h2 className="text-lg font-serif font-semibold text-ql-text">
             {initialData ? "Edit Transaction" : "Record Expense"}
           </h2>
           <button
+            type="button"
             onClick={handleClose}
-            className="p-1.5 rounded-lg text-ql-muted hover:text-ql-text hover:bg-ql-bg transition"
+            aria-label="Close modal"
+            className="p-2 rounded-lg text-ql-muted hover:text-ql-text hover:bg-ql-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>

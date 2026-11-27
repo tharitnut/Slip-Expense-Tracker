@@ -105,13 +105,15 @@ export default function CategoriesPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search categories..."
+              placeholder="Search categories"
               className="w-full pl-10 pr-9 py-2 rounded-xl border border-ql-border bg-ql-surface text-sm text-ql-text placeholder:text-ql-muted focus:outline-none focus:ring-2 focus:ring-ql-primary/30 focus:border-ql-primary transition"
             />
             {search && (
               <button
+                type="button"
                 onClick={() => setSearch("")}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-ql-muted hover:text-ql-text transition"
+                aria-label="Clear search"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-ql-muted hover:text-ql-text focus-visible:outline-none focus-visible:text-ql-primary transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -196,18 +198,22 @@ export default function CategoriesPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition">
+              <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                 <button
+                  type="button"
                   onClick={() => handleOpenEditModal(cat)}
                   title="Rename"
-                  className="p-1.5 rounded-lg text-ql-muted hover:text-ql-primary hover:bg-ql-primary-light transition cursor-pointer"
+                  aria-label={`Rename ${cat.name}`}
+                  className="p-2 rounded-lg text-ql-muted hover:text-ql-primary hover:bg-ql-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-primary/40 transition-colors cursor-pointer"
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => setDeletingCategory(cat)}
                   title="Delete"
-                  className="p-1.5 rounded-lg text-ql-muted hover:text-ql-error hover:bg-ql-error-light transition cursor-pointer"
+                  aria-label={`Delete ${cat.name}`}
+                  className="p-2 rounded-lg text-ql-muted hover:text-ql-error hover:bg-ql-error-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ql-error/40 transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
